@@ -1,85 +1,43 @@
 'use strict';
-const { execSync } = require('child_process');
-const defaults = (domain, key) => { try { return execSync(`defaults read ${domain} ${key} 2>/dev/null`, { encoding: 'utf8' }).trim(); } catch { return null; } };
-const sysctl = (key) => { try { return execSync(`sysctl -n ${key} 2>/dev/null`, { encoding: 'utf8' }).trim(); } catch { return null; } };
-
-const P = 'darwin';
+// macOS tweaks. `defaults` changes run as you (no password); system ones (sysctl, pmset, Spotlight,
+// DNS, network interfaces) ask for your password once per batch.
+const M = ['darwin'];
+const def = (domain, key, type, value, extra = {}) => ({ t: 'defaults', domain, key, type, value, ...extra });
+const T = (o) => ({ os: M, risk: 'safe', reboot: false, ...o });
+const sonoma = (hw) => (hw.macosMajor && hw.macosMajor < 14 ? 'Needs macOS 14 Sonoma or newer.' : null);
 
 module.exports = [
-  // ---- FPS ----
-  {
-    id: 'mac-reduce-motion', name: 'Reduce motion', desc: 'Disables macOS animations for a snappier feel and fewer dropped frames.',
-    category: 'fps', platform: P, plan: 'free', optimal: 'true',
-    check: () => defaults('com.apple.universalaccess', 'reduceMotion') || 'false',
-    apply: () => execSync('defaults write com.apple.universalaccess reduceMotion -bool true'),
-    revert: (prev) => execSync(`defaults write com.apple.universalaccess reduceMotion -bool ${prev === 'true' ? 'true' : 'false'}`),
-  },
-  {
-    id: 'mac-reduce-transparency', name: 'Reduce transparency', desc: 'Saves GPU work by removing window transparency effects.',
-    category: 'fps', platform: P, plan: 'free', optimal: 'true',
-    check: () => defaults('com.apple.universalaccess', 'reduceTransparency') || 'false',
-    apply: () => execSync('defaults write com.apple.universalaccess reduceTransparency -bool true'),
-    revert: (prev) => execSync(`defaults write com.apple.universalaccess reduceTransparency -bool ${prev === 'true' ? 'true' : 'false'}`),
-  },
-  {
-    id: 'mac-disable-animations', name: 'Speed up Dock & windows', desc: 'Removes Dock bounce, window resize and Mission Control animations.',
-    category: 'fps', platform: P, plan: 'free', optimal: '0',
-    check: () => defaults('com.apple.dock', 'launchanim') || '1',
-    apply: () => {
-      execSync('defaults write com.apple.dock launchanim -bool false');
-      execSync('defaults write com.apple.dock expose-animation-duration -float 0.1');
-      execSync('defaults write -g NSAutomaticWindowAnimationsEnabled -bool false');
-      execSync('killall Dock 2>/dev/null || true');
-    },
-    revert: (prev) => {
-      execSync('defaults write com.apple.dock launchanim -bool true');
-      execSync('defaults delete com.apple.dock expose-animation-duration 2>/dev/null || true');
-      execSync('defaults write -g NSAutomaticWindowAnimationsEnabled -bool true');
-      execSync('killall Dock 2>/dev/null || true');
-    },
-  },
+  // ---- FPS & smoothness ----
+  T({ id: 'mac-reduce-motion', name: 'Reduce motion', category: 'fps', desc: 'Replaces sliding/zooming animations with quick fades.', long: { what: 'Turns on Accessibility → Display → Reduce motion.', why: 'Fewer full-screen animations when switching Spaces/apps — snappier, less GPU work.', risk: 'Cosmetic. If macOS blocks the change (some versions protect this setting), the tweak is rolled back and shows how to turn it on in System Settings.' }, changes: [def('com.apple.universalaccess', 'reduceMotion', 'bool', true)], tags: ['animations', 'smooth'] }),
+  T({ id: 'mac-reduce-transparency', name: 'Reduce transparency', category: 'fps', desc: 'Removes window/menu blur to save GPU work.', long: { what: 'Turns on Accessibility → Display → Reduce transparency.', why: 'Blur effects cost GPU time, which matters on MacBook Air / integrated GPUs.', risk: 'Cosmetic.' }, changes: [def('com.apple.universalaccess', 'reduceTransparency', 'bool', true)], tags: ['gpu', 'transparency'] }),
+  T({ id: 'mac-window-anim-off', name: 'No window open/close animations', category: 'fps', desc: 'Windows and sheets appear instantly.', long: { what: 'Sets NSAutomaticWindowAnimationsEnabled = false.', why: 'Snappier UI.', risk: 'Cosmetic. Applies to apps opened afterwards.' }, changes: [def('-g', 'NSAutomaticWindowAnimationsEnabled', 'bool', false)], tags: ['animations'] }),
+  T({ id: 'mac-dock-fast', name: 'Faster Dock & Mission Control', category: 'fps', desc: 'No Dock auto-hide delay and quicker Mission Control.', long: { what: 'Sets Dock auto-hide delay to 0, auto-hide animation to 0.15 s and Mission Control animation to 0.1 s.', why: 'Less waiting when you move between a game and other apps.', risk: 'Cosmetic. The Dock restarts for a second.' }, changes: [def('com.apple.dock', 'autohide-delay', 'float', 0), def('com.apple.dock', 'autohide-time-modifier', 'float', 0.15), def('com.apple.dock', 'expose-animation-duration', 'float', 0.1)], post: ['dock'], tags: ['dock', 'mission control'] }),
+  T({ id: 'mac-dock-bounce-off', name: 'No Dock bouncing', category: 'fps', desc: 'Apps stop bouncing in the Dock for attention or on launch.', long: { what: 'Sets no-bouncing = true and launchanim = false.', why: 'A bouncing Dock icon can pull you out of fullscreen games.', risk: 'You won\'t see when an app wants attention.' }, changes: [def('com.apple.dock', 'no-bouncing', 'bool', true), def('com.apple.dock', 'launchanim', 'bool', false)], post: ['dock'], tags: ['dock', 'notifications'] }),
+  T({ id: 'mac-spaces-fixed', name: 'Keep Spaces in order', category: 'fps', desc: 'Stops macOS rearranging Spaces (your fullscreen game stays put).', long: { what: 'Turns off "Automatically rearrange Spaces based on most recent use".', why: 'Fullscreen games keep their position when you swipe between Spaces.', risk: 'Cosmetic.' }, changes: [def('com.apple.dock', 'mru-spaces', 'bool', false)], post: ['dock'], tags: ['spaces', 'fullscreen'] }),
+  T({ id: 'mac-finder-anim-off', name: 'Faster Finder', category: 'cpu', desc: 'Turns off Finder window and Get Info animations.', long: { what: 'Sets Finder DisableAllAnimations = true.', why: 'Snappier Finder.', risk: 'Cosmetic. Finder restarts.' }, changes: [def('com.apple.finder', 'DisableAllAnimations', 'bool', true)], post: ['finder'], tags: ['finder', 'animations'] }),
+  T({ id: 'mac-low-power-off', name: 'Low Power Mode off', category: 'fps', desc: 'Makes sure Low Power Mode isn\'t capping your Mac\'s speed.', long: { what: 'Sets pmset lowpowermode 0 (always).', why: 'Low Power Mode lowers CPU/GPU clocks — games run noticeably slower.', risk: 'More battery use. Revert restores your old setting.' }, changes: [{ t: 'pmset', key: 'lowpowermode', value: '0' }], tags: ['power', 'battery', 'fps'] }),
+  T({ id: 'mac-high-power', name: 'High Power Mode (plugged in)', category: 'gpu', risk: 'moderate', desc: 'Apple Silicon MacBook Pro/iMac/Mac Studio: sustain top speed with louder fans.', long: { what: 'Sets pmset powermode 2 on charger, on Macs that support High Power Mode.', why: 'Lets the fans spin up earlier so the chip can hold peak clocks in long gaming sessions.', risk: 'Louder fans and more heat. Shows as not available on Macs without High Power Mode.' }, changes: [{ t: 'pmset', key: 'powermode', value: '2', scope: 'c', why: 'This Mac doesn\'t have High Power Mode' }], tags: ['power', 'apple silicon', 'fans'] }),
+  T({ id: 'mac-app-nap-off', name: 'Turn off App Nap', category: 'fps', desc: 'macOS won\'t throttle games and voice chat in the background.', long: { what: 'Sets NSAppSleepDisabled = true for all apps.', why: 'App Nap slows apps that are hidden/behind other windows (e.g. a game while you check Discord).', risk: 'Background apps can use a bit more battery.' }, changes: [def('-g', 'NSAppSleepDisabled', 'bool', true)], tags: ['background', 'throttling', 'discord'] }),
 
-  // ---- CPU & RAM ----
-  {
-    id: 'mac-spotlight-off', name: 'Pause Spotlight indexing', desc: 'Stops Spotlight from using CPU and disk while you game.',
-    category: 'cpu', platform: P, plan: 'plus', elevated: true, optimal: 'off',
-    check: () => { try { const o = execSync('mdutil -s / 2>/dev/null', { encoding: 'utf8' }); return o.includes('Indexing enabled') ? 'on' : 'off'; } catch { return 'unknown'; } },
-    apply: () => {},
-    elevatedCmd: () => 'mdutil -i off / -d',
-    revert: () => {},
-  },
+  // ---- Input ----
+  T({ id: 'mac-mouse-accel-off', name: 'Turn off pointer acceleration', category: 'input', reboot: 'signout', desc: 'Same hand movement = same cursor distance, for consistent aim.', long: { what: 'Turns off System Settings → Mouse → Pointer acceleration (com.apple.mouse.linear).', why: 'Consistent aim in games that don\'t use raw input.', risk: 'Pointer may feel slower on the desktop. Takes effect after you log out and back in.' }, changes: [def('-g', 'com.apple.mouse.linear', 'bool', true)], guard: sonoma, tags: ['mouse', 'aim', 'acceleration'] }),
+  T({ id: 'mac-key-repeat-fast', name: 'Fastest key repeat', category: 'input', reboot: 'signout', desc: 'Shortest delay and fastest repeat for held keys.', long: { what: 'Sets KeyRepeat = 2 and InitialKeyRepeat = 15.', why: 'Held keys repeat sooner.', risk: 'Safe. Takes effect after you log out.' }, changes: [def('-g', 'KeyRepeat', 'int', 2), def('-g', 'InitialKeyRepeat', 'int', 15)], tags: ['keyboard'] }),
+  T({ id: 'mac-press-hold-off', name: 'Hold keys to repeat (not accents)', category: 'input', desc: 'Holding W/A/S/D repeats instead of popping up accent letters.', long: { what: 'Sets ApplePressAndHoldEnabled = false.', why: 'Browser and some native games otherwise show the accent picker when you hold a key.', risk: 'You type accents with Option shortcuts instead. Applies to apps opened afterwards.' }, changes: [def('-g', 'ApplePressAndHoldEnabled', 'bool', false)], tags: ['keyboard', 'wasd'] }),
+
+  // ---- CPU & background ----
+  T({ id: 'mac-spotlight-off', name: 'Pause Spotlight indexing', category: 'cpu', risk: 'moderate', desc: 'Stops Spotlight re-indexing your disk (e.g. after a big game install).', long: { what: 'Runs "mdutil -i off /".', why: 'Indexing a new 100 GB game makes the disk and CPU busy for a long time.', risk: 'Spotlight can\'t find new files until you Revert (which turns indexing back on).' }, changes: [{ t: 'mdutil', volume: '/', enabled: false }], tags: ['disk', 'cpu', 'indexing', 'spotlight'] }),
+  T({ id: 'mac-siri-off', name: 'Turn off Siri', category: 'privacy', desc: 'Stops Siri listening and its background processes.', long: { what: 'Turns off "Ask Siri" and hides it from the menu bar.', why: 'One fewer always-on background service.', risk: 'Safe. May need a log-out on some macOS versions.' }, changes: [def('com.apple.assistant.support', 'Assistant Enabled', 'bool', false), def('com.apple.Siri', 'StatusMenuVisible', 'bool', false)], tags: ['siri', 'background'] }),
+  T({ id: 'mac-auto-update-download-off', name: 'Don\'t download macOS updates in the background', category: 'network', desc: 'Stops multi-GB update downloads eating bandwidth mid-game.', long: { what: 'Turns off "Download new updates when available" (system setting).', why: 'Background downloads cause lag spikes.', risk: 'You need to check for updates yourself in System Settings. Security responses still install.' }, changes: [def('/Library/Preferences/com.apple.SoftwareUpdate', 'AutomaticDownload', 'bool', false, { admin: true })], tags: ['updates', 'network', 'lag'] }),
+  T({ id: 'mac-analytics-off', name: 'Turn off Mac analytics sharing', category: 'privacy', desc: 'Stops sending diagnostics to Apple and developers.', long: { what: 'Turns off "Share Mac Analytics" and "Share with app developers".', why: 'Privacy, and less background reporting after crashes.', risk: 'Safe.' }, changes: [def('/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist', 'AutoSubmit', 'bool', false, { admin: true }), def('/Library/Application Support/CrashReporter/DiagnosticMessagesHistory.plist', 'ThirdPartyDataSubmit', 'bool', false, { admin: true })], tags: ['privacy', 'analytics'] }),
+  T({ id: 'mac-crash-dialog-off', name: 'No crash pop-ups over your game', category: 'stability', desc: 'Crash reports are saved quietly instead of opening a dialog.', long: { what: 'Sets CrashReporter DialogType = none.', why: 'A crash dialog from some other app can pull you out of fullscreen.', risk: 'Crashes are still logged in Console.' }, changes: [def('com.apple.CrashReporter', 'DialogType', 'string', 'none')], tags: ['popups', 'crash'] }),
 
   // ---- Network ----
-  {
-    id: 'mac-network-buffers', name: 'Larger network buffers', desc: 'Increases TCP/UDP buffer sizes for smoother online play.',
-    category: 'network', platform: P, plan: 'pro', elevated: true, optimal: 'tuned',
-    check: () => sysctl('net.inet.tcp.sendspace') || '131072',
-    apply: () => {},
-    elevatedCmd: () => 'sysctl -w net.inet.tcp.sendspace=262144 net.inet.tcp.recvspace=262144 net.inet.udp.recvspace=262144 net.inet.tcp.delayed_ack=0',
-    revert: () => {},
-  },
-  {
-    id: 'mac-tcp-no-delay', name: 'Disable TCP delayed ACK', desc: 'Acknowledges packets immediately for lower ping.',
-    category: 'network', platform: P, plan: 'pro', elevated: true, optimal: '0',
-    check: () => sysctl('net.inet.tcp.delayed_ack') || '3',
-    apply: () => {},
-    elevatedCmd: () => 'sysctl -w net.inet.tcp.delayed_ack=0',
-    revert: () => {},
-  },
+  T({ id: 'mac-awdl-off', name: 'Stop AirDrop Wi-Fi ping spikes', category: 'network', risk: 'moderate', volatile: true, desc: 'Turns off AWDL, which makes Wi-Fi hop channels every second.', long: { what: 'Takes the awdl0 interface down until you restart (or Revert).', why: 'AWDL (AirDrop, Handoff, Sidecar) periodically switches the Wi-Fi radio channel, a well-known cause of regular ping spikes in online games.', risk: 'AirDrop, AirPlay to Mac, Sidecar and Universal Control stop working until you Revert or restart. macOS may turn it back on when you open AirDrop.' }, changes: [{ t: 'iface', name: 'awdl0', up: false }], tags: ['wifi', 'ping', 'lag spikes', 'airdrop'] }),
+  T({ id: 'mac-delayed-ack-off', name: 'TCP delayed ACK off', category: 'network', volatile: true, desc: 'Acknowledges TCP packets immediately.', long: { what: 'Sets net.inet.tcp.delayed_ack = 0 until you restart.', why: 'Lower latency for TCP games (some MMOs, Minecraft Java). Most shooters use UDP and aren\'t affected.', risk: 'Safe. Resets when you restart your Mac.' }, changes: [{ t: 'sysctl', key: 'net.inet.tcp.delayed_ack', value: '0' }], tags: ['ping', 'tcp', 'latency'] }),
+  ...[
+    ['cloudflare', 'Cloudflare', ['1.1.1.1', '1.0.0.1']], ['google', 'Google', ['8.8.8.8', '8.8.4.4']], ['quad9', 'Quad9', ['9.9.9.9', '149.112.112.112']], ['adguard', 'AdGuard', ['94.140.14.14', '94.140.15.15']],
+  ].map(([k, label, servers]) => T({ id: `mac-dns-${k}`, name: `DNS: ${label}`, category: 'network', exclusive: 'dns', desc: 'Faster server lookups for launchers and matchmaking.', long: { what: `Sets ${servers.join(' and ')} as DNS on your connected network services.`, why: 'Helps when your ISP\'s DNS is slow. It doesn\'t change in-game ping.', risk: 'Safe. Revert restores automatic DNS.' }, changes: [{ t: 'macDns', servers }], tags: ['dns', label.toLowerCase()] })),
 
-  // ---- Stability ----
-  {
-    id: 'mac-app-nap-off', name: 'Disable App Nap', desc: 'Prevents macOS from throttling background games.',
-    category: 'stability', platform: P, plan: 'free', optimal: 'false',
-    check: () => defaults('-g', 'NSAppSleepDisabled') || '0',
-    apply: () => execSync('defaults write -g NSAppSleepDisabled -bool true'),
-    revert: () => execSync('defaults write -g NSAppSleepDisabled -bool false'),
-  },
-  {
-    id: 'mac-disable-crash-reporter', name: 'Disable crash reporter dialog', desc: 'Stops the "unexpectedly quit" dialog from freezing your screen.',
-    category: 'stability', platform: P, plan: 'free', optimal: 'server',
-    check: () => defaults('com.apple.CrashReporter', 'DialogType') || 'crashreport',
-    apply: () => execSync('defaults write com.apple.CrashReporter DialogType server'),
-    revert: (prev) => execSync(`defaults write com.apple.CrashReporter DialogType ${prev || 'crashreport'}`),
-  },
+  // ---- Picture / monitoring ----
+  T({ id: 'mac-metal-hud', name: 'Metal performance HUD', category: 'picture', desc: 'Shows FPS and frame times in every Metal game.', long: { what: 'Sets MetalForceHudEnabled = true.', why: 'A built-in, accurate FPS/frame-time overlay from Apple — great for checking whether a tweak helped.', risk: 'Shows the HUD in all Metal apps until you Revert. Restart the game after applying.' }, changes: [def('-g', 'MetalForceHudEnabled', 'bool', true)], tags: ['fps counter', 'overlay', 'metal', 'monitoring'] }),
 ];

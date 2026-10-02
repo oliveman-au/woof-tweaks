@@ -1,0 +1,15 @@
+'use strict';
+// ChromeOS (Chromebook). Woof Tweaks runs inside ChromeOS's Linux container, which can't change ChromeOS
+// itself. What IS real: Android app settings over adb (when "Develop Android apps" is on), and Linux-app
+// settings inside the container. Everything else is offered as an honest guide, never a fake toggle.
+const C = ['chromeos'];
+const T = (o) => ({ os: C, risk: 'safe', reboot: false, ...o });
+const adb = (key, value) => ({ t: 'adb', ns: 'global', key, value: String(value) });
+
+module.exports = [
+  T({ id: 'cros-android-animations', name: 'Faster Android app animations', category: 'fps', desc: 'Halves Android animation time (like Developer options → animation scale).', long: { what: 'Sets Android window, transition and animator duration scale to 0.5x over adb.', why: 'Android games and apps feel snappier on Chromebooks.', risk: 'Safe. Needs ChromeOS Settings → Developers → Linux → "Develop Android apps" turned on.' }, changes: [adb('window_animation_scale', '0.5'), adb('transition_animation_scale', '0.5'), adb('animator_duration_scale', '0.5')], tags: ['android', 'animations'] }),
+  T({ id: 'cros-android-dns-cloudflare', name: 'Android private DNS: Cloudflare', category: 'network', exclusive: 'android-dns', desc: 'Encrypted, fast DNS for Android apps and games.', long: { what: 'Sets Android Private DNS to one.one.one.one over adb.', why: 'Faster, encrypted lookups for Android games. For the whole Chromebook use Settings → Privacy → Secure DNS.', risk: 'Safe.' }, changes: [adb('private_dns_mode', 'hostname'), adb('private_dns_specifier', 'one.one.one.one')], tags: ['dns', 'android'] }),
+  T({ id: 'cros-android-dns-google', name: 'Android private DNS: Google', category: 'network', exclusive: 'android-dns', desc: 'Encrypted Google DNS for Android apps and games.', long: { what: 'Sets Android Private DNS to dns.google over adb.', why: 'Encrypted lookups for Android games.', risk: 'Safe.' }, changes: [adb('private_dns_mode', 'hostname'), adb('private_dns_specifier', 'dns.google')], tags: ['dns', 'android'] }),
+  T({ id: 'cros-android-stay-awake', name: 'Keep Android awake while charging', category: 'stability', desc: 'Android games don\'t get suspended when the screen dims on charger.', long: { what: 'Sets stay_on_while_plugged_in = 3 (AC and USB) over adb.', why: 'Long Android game sessions don\'t get paused by sleep.', risk: 'Uses more power while plugged in.' }, changes: [adb('stay_on_while_plugged_in', '3')], tags: ['android', 'sleep'] }),
+  T({ id: 'cros-container-mangohud-config', name: 'MangoHud preset for Linux games', category: 'picture', desc: 'FPS overlay preset for games you run in the Linux container.', long: { what: 'Writes ~/.config/MangoHud/MangoHud.conf in your Linux container.', why: 'Measure FPS in Linux games on your Chromebook (install MangoHud with: sudo apt install mangohud).', risk: 'Safe.' }, changes: [{ t: 'file', path: '~/.config/MangoHud/MangoHud.conf', content: '# Woof Tweaks MangoHud preset\nfps\nframetime\ncpu_stats\ngpu_stats\nram\nposition=top-left\n' }], tags: ['overlay', 'linux'] }),
+];

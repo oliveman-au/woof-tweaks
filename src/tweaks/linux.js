@@ -1,63 +1,69 @@
 'use strict';
-const { execSync } = require('child_process');
-const sysctl = (key) => { try { return execSync(`sysctl -n ${key} 2>/dev/null`, { encoding: 'utf8' }).trim(); } catch { return null; } };
+// Linux tweaks (desktop distros; ChromeOS Linux containers get their own list). Kernel settings are
+// made persistent in /etc/sysctl.d/99-woof-tweaks.conf, which Revert edits back.
+const L = ['linux'];
+const T = (o) => ({ os: L, risk: 'safe', reboot: false, ...o });
+const sysctl = (key, value) => ({ t: 'sysctl', key, value: String(value), persist: true });
+const gs = (schema, key, value) => ({ t: 'gsettings', schema, key, value });
+const unit = (u) => ({ t: 'systemd', unit: u, enabled: false });
+const pkg = (names) => ({ t: 'pkg', names });
 
-const P = 'linux';
+const GAMING_LIMITS = '# Added by Woof Tweaks: lets Wine/Proton "esync" open enough file handles.\n* hard nofile 1048576\n* soft nofile 1048576\n';
+const SYSTEMD_LIMITS = '# Added by Woof Tweaks\n[Manager]\nDefaultLimitNOFILE=1048576\n';
+const MANGOHUD_CONF = '# Woof Tweaks MangoHud preset — toggle in-game with Right Shift + F12\nfps\nframetime\nframe_timing\ncpu_stats\ncpu_temp\ngpu_stats\ngpu_temp\nram\nvram\nposition=top-left\nfont_size=20\nbackground_alpha=0.4\n';
+const PIPEWIRE_LL = '# Woof Tweaks: lower audio latency (about 5 ms at 48 kHz)\ncontext.properties = {\n    default.clock.min-quantum = 256\n}\n';
+const resolvedDns = (label, servers) => `# Woof Tweaks: ${label} DNS\n[Resolve]\nDNS=${servers.join(' ')}\n`;
 
 module.exports = [
-  // ---- FPS ----
-  {
-    id: 'linux-cpu-performance', name: 'CPU governor → performance', desc: 'Locks CPU to maximum frequency for consistent frame rates.',
-    category: 'fps', platform: P, plan: 'free', elevated: true, optimal: 'performance',
-    check: () => { try { return execSync('cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null', { encoding: 'utf8' }).trim(); } catch { return 'unknown'; } },
-    apply: () => {},
-    elevatedCmd: () => 'for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo performance > "$f" 2>/dev/null; done',
-    revert: () => {},
-  },
+  // ---- FPS & power ----
+  T({ id: 'linux-governor-performance', name: 'CPU governor: performance', category: 'fps', volatile: true, desc: 'Keeps CPU clocks high instead of ramping up on demand.', long: { what: 'Sets every core\'s cpufreq governor to "performance" (until restart).', why: 'Removes ramp-up delay that causes frame-time spikes in CPU-heavy games.', risk: 'More heat and power. Resets on restart — apply again or use GameMode, which does this automatically per game.' }, changes: [{ t: 'sysfs', glob: '/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor', value: 'performance', availableFrom: 'scaling_available_governors', label: 'CPU governor' }], tags: ['cpu', 'fps', 'governor'] }),
+  T({ id: 'linux-epp-performance', name: 'CPU energy preference: performance', category: 'fps', volatile: true, desc: 'Tells modern Intel/AMD CPUs to favour speed over power saving.', long: { what: 'Sets energy_performance_preference to "performance" on every core (until restart).', why: 'With intel_pstate/amd-pstate in active mode this matters more than the governor.', risk: 'More power use. Resets on restart.' }, changes: [{ t: 'sysfs', glob: '/sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference', value: 'performance', availableFrom: 'energy_performance_available_preferences', label: 'Energy performance preference' }], tags: ['cpu', 'power'] }),
+  T({ id: 'linux-turbo-on', name: 'Make sure CPU boost is on', category: 'fps', volatile: true, desc: 'Re-enables turbo boost if something turned it off.', long: { what: 'Sets intel_pstate no_turbo = 0 or cpufreq boost = 1, whichever your CPU uses.', why: 'Some power tools disable turbo — games then run far slower.', risk: 'More heat. Resets on restart.' }, changes: [{ t: 'sysfs', glob: '/sys/devices/system/cpu/intel_pstate/no_turbo', value: '0', label: 'Intel turbo' }, { t: 'sysfs', glob: '/sys/devices/system/cpu/cpufreq/boost', value: '1', label: 'CPU boost' }], tags: ['cpu', 'turbo', 'boost'] }),
+  T({ id: 'linux-power-profile', name: 'Power profile: performance', category: 'fps', desc: 'Switches power-profiles-daemon to Performance.', long: { what: 'Runs "powerprofilesctl set performance".', why: 'The same as choosing Performance in your desktop\'s power menu.', risk: 'More power use. Revert switches back.' }, changes: [{ t: 'ppd', value: 'performance' }], tags: ['power', 'profile'] }),
+  T({ id: 'linux-tuned-latency', name: 'tuned profile: latency-performance', category: 'fps', desc: 'Applies Red Hat\'s low-latency tuned profile (Fedora etc.).', long: { what: 'Runs "tuned-adm profile latency-performance".', why: 'A well-tested bundle of CPU/power settings for low latency.', risk: 'More power use. Revert restores your previous profile.' }, changes: [{ t: 'tuned', value: 'latency-performance' }], tags: ['tuned', 'latency'] }),
+  T({ id: 'linux-gamemode', name: 'Install Feral GameMode', category: 'fps', desc: 'Automatically boosts CPU, I/O and GPU while a game runs.', long: { what: 'Installs the "gamemode" package from your distro.', why: 'Games/Steam launch options with "gamemoderun" get the performance governor, I/O priority and more — only while playing.', risk: 'Safe. Revert uninstalls it if Woof Tweaks installed it.' }, changes: [pkg({ apt: 'gamemode', dnf: 'gamemode', pacman: 'gamemode', zypper: 'gamemode' })], tags: ['gamemode', 'steam'] }),
+  T({ id: 'linux-mangohud', name: 'Install MangoHud', category: 'picture', desc: 'An FPS/frame-time/temperature overlay for Vulkan and OpenGL games.', long: { what: 'Installs the "mangohud" package.', why: 'Lets you measure whether tweaks actually help. Add "mangohud %command%" to Steam launch options.', risk: 'Safe.' }, changes: [pkg({ apt: 'mangohud', dnf: 'mangohud', pacman: 'mangohud', zypper: 'mangohud' })], tags: ['overlay', 'fps counter', 'monitoring'] }),
+  T({ id: 'linux-mangohud-config', name: 'MangoHud gaming preset', category: 'picture', desc: 'A clean MangoHud layout: FPS, frame time, CPU/GPU temps and usage.', long: { what: 'Writes ~/.config/MangoHud/MangoHud.conf (your old file is backed up).', why: 'Sensible defaults out of the box.', risk: 'Safe.' }, changes: [{ t: 'file', path: '~/.config/MangoHud/MangoHud.conf', content: MANGOHUD_CONF }], tags: ['overlay', 'mangohud'] }),
 
   // ---- CPU & RAM ----
-  {
-    id: 'linux-swappiness', name: 'Reduce swappiness', desc: 'Keeps game data in RAM instead of swapping to disk.',
-    category: 'cpu', platform: P, plan: 'free', elevated: true, optimal: '10',
-    check: () => sysctl('vm.swappiness') || '60',
-    apply: () => {},
-    elevatedCmd: () => 'sysctl -w vm.swappiness=10',
-    revert: () => {},
-  },
-  {
-    id: 'linux-oom-less', name: 'Protect game from OOM killer', desc: 'Makes the kernel less likely to kill your game when memory is low.',
-    category: 'cpu', platform: P, plan: 'plus', optimal: 'set',
-    check: () => 'default',
-    apply: () => {},
-    elevatedCmd: () => 'sysctl -w vm.overcommit_memory=1',
-    revert: () => {},
-  },
+  T({ id: 'linux-swappiness', name: 'Lower swappiness', category: 'cpu', desc: 'Keeps games in RAM instead of swapping them to disk.', long: { what: 'Sets vm.swappiness = 10 (default 60).', why: 'Less swapping of game memory = fewer hitches when RAM fills up.', risk: 'Safe.' }, changes: [sysctl('vm.swappiness', 10)], tags: ['ram', 'swap', 'stutter'] }),
+  T({ id: 'linux-dirty-writeback', name: 'Smoother disk writeback', category: 'cpu', desc: 'Writes data to disk in small steady chunks instead of big bursts.', long: { what: 'Sets vm.dirty_ratio = 10 and vm.dirty_background_ratio = 5.', why: 'Big writeback bursts (game updates, shader caches) can stall the game.', risk: 'Safe.' }, changes: [sysctl('vm.dirty_ratio', 10), sysctl('vm.dirty_background_ratio', 5)], tags: ['disk', 'stutter'] }),
+  T({ id: 'linux-vfs-cache', name: 'Keep file cache longer', category: 'cpu', desc: 'The kernel keeps directory/file info cached longer.', long: { what: 'Sets vm.vfs_cache_pressure = 50 (default 100).', why: 'Slightly faster asset loading on repeat. Small effect.', risk: 'Safe.' }, changes: [sysctl('vm.vfs_cache_pressure', 50)], tags: ['disk', 'loading'] }),
+  T({ id: 'linux-max-map-count', name: 'Raise vm.max_map_count (SteamOS value)', category: 'stability', desc: 'Fixes crashes in big modern games (CS2, Hogwarts Legacy, Star Citizen…).', long: { what: 'Sets vm.max_map_count = 2147483642, the value SteamOS and Fedora use.', why: 'Some games need far more memory mappings than the old default (65530) and crash without it.', risk: 'Safe.' }, changes: [sysctl('vm.max_map_count', 2147483642)], tags: ['crash', 'proton', 'steam'] }),
+  T({ id: 'linux-split-lock-off', name: 'Turn off split-lock slowdown', category: 'stability', desc: 'Stops the kernel deliberately slowing some Windows games under Proton.', long: { what: 'Sets kernel.split_lock_mitigate = 0 (as SteamOS does).', why: 'Newer kernels penalise "split lock" instructions, which some games (e.g. God of War) use heavily — causing big FPS drops.', risk: 'A misbehaving program could slow other programs slightly. Not available on older kernels.' }, changes: [sysctl('kernel.split_lock_mitigate', 0)], tags: ['proton', 'fps', 'stutter'] }),
+  T({ id: 'linux-thp-madvise', name: 'Transparent huge pages: madvise', category: 'cpu', volatile: true, desc: 'Only programs that ask for huge pages get them.', long: { what: 'Sets /sys/kernel/mm/transparent_hugepage/enabled to "madvise" (until restart).', why: '"always" can cause latency spikes while the kernel compacts memory.', risk: 'Safe. Resets on restart.' }, changes: [{ t: 'sysfs', glob: '/sys/kernel/mm/transparent_hugepage/enabled', value: 'madvise', bracket: true, label: 'Transparent huge pages' }], tags: ['ram', 'latency'] }),
+  T({ id: 'linux-file-limits', name: 'Higher open-file limit (esync)', category: 'stability', reboot: 'restart', desc: 'Lets Wine/Proton use esync without running out of file handles.', long: { what: 'Adds a limits.d file and a systemd drop-in raising the open-files limit to 1,048,576.', why: 'Proton\'s esync needs many file descriptors; low limits cause crashes or fall back to slower sync.', risk: 'Safe. Needs a restart (or log out).' }, changes: [{ t: 'file', path: '/etc/security/limits.d/99-woof-gaming.conf', content: GAMING_LIMITS }, { t: 'file', path: '/etc/systemd/system.conf.d/99-woof-gaming.conf', content: SYSTEMD_LIMITS }], post: ['systemd'], tags: ['proton', 'wine', 'esync'] }),
+  T({ id: 'linux-nmi-watchdog-off', name: 'Turn off the NMI watchdog', category: 'input', risk: 'moderate', desc: 'Removes a periodic CPU interrupt used for debugging hangs.', long: { what: 'Sets kernel.nmi_watchdog = 0.', why: 'One fewer periodic interrupt on every core. Small effect.', risk: 'Hard lock-ups are harder to diagnose.' }, changes: [sysctl('kernel.nmi_watchdog', 0)], tags: ['latency'] }),
+  T({ id: 'linux-zram', name: 'Compressed RAM swap (zram)', category: 'cpu', reboot: 'restart', desc: 'Swaps to compressed RAM instead of the disk.', long: { what: 'Installs zram-generator and configures half your RAM (max 8 GB) as zstd-compressed swap.', why: 'When RAM runs out, swapping to zram is far faster than to disk — fewer freezes on 8–16 GB PCs.', risk: 'Uses some CPU to compress. Needs a restart. Some distros (Fedora) already have it.' }, changes: [pkg({ apt: 'systemd-zram-generator', dnf: 'zram-generator', pacman: 'zram-generator', zypper: 'zram-generator' }), { t: 'file', path: '/etc/systemd/zram-generator.conf', content: '# Woof Tweaks\n[zram0]\nzram-size = min(ram / 2, 8192)\ncompression-algorithm = zstd\n' }], tags: ['ram', 'swap', 'freeze'] }),
+
+  // ---- Disk ----
+  T({ id: 'linux-io-nvme-none', name: 'NVMe I/O scheduler: none', category: 'stability', volatile: true, desc: 'NVMe drives schedule themselves — skip the extra kernel layer.', long: { what: 'Sets the I/O scheduler of NVMe drives to "none" (until restart).', why: 'Lowest overhead for fast NVMe SSDs.', risk: 'Safe. Resets on restart.' }, changes: [{ t: 'sysfs', glob: '/sys/block/nvme*/queue/scheduler', value: 'none', bracket: true, label: 'NVMe scheduler' }], tags: ['disk', 'nvme', 'loading'] }),
+  T({ id: 'linux-io-ssd-deadline', name: 'SATA SSD I/O scheduler: mq-deadline', category: 'stability', volatile: true, desc: 'Low-latency scheduling for SATA SSDs.', long: { what: 'Sets SATA SSDs (not hard drives) to "mq-deadline" (until restart).', why: 'Good latency for SSDs while still being fair under load.', risk: 'Safe. Resets on restart.' }, changes: (ctx) => ((ctx.hw && ctx.hw.sataSsds) || []).map((d) => ({ t: 'sysfs', glob: `/sys/block/${d}/queue/scheduler`, value: 'mq-deadline', bracket: true, label: `${d} scheduler` })), tags: ['disk', 'ssd'] }),
 
   // ---- Network ----
-  {
-    id: 'linux-tcp-fastopen', name: 'TCP Fast Open', desc: 'Sends data in the SYN packet for faster connection setup.',
-    category: 'network', platform: P, plan: 'pro', elevated: true, optimal: '3',
-    check: () => sysctl('net.ipv4.tcp_fastopen') || '1',
-    apply: () => {},
-    elevatedCmd: () => 'sysctl -w net.ipv4.tcp_fastopen=3',
-    revert: () => {},
-  },
-  {
-    id: 'linux-tcp-buffers', name: 'Larger network buffers', desc: 'Increases TCP/UDP buffer sizes for smoother online play.',
-    category: 'network', platform: P, plan: 'pro', elevated: true, optimal: 'tuned',
-    check: () => sysctl('net.core.rmem_max') || '212992',
-    apply: () => {},
-    elevatedCmd: () => 'sysctl -w net.core.rmem_max=16777216 net.core.wmem_max=16777216 net.ipv4.tcp_rmem="4096 87380 16777216" net.ipv4.tcp_wmem="4096 65536 16777216"',
-    revert: () => {},
-  },
+  T({ id: 'linux-bbr', name: 'BBR congestion control + fq', category: 'network', desc: 'Google\'s BBR keeps latency low when your connection is busy.', long: { what: 'Sets net.ipv4.tcp_congestion_control = bbr and net.core.default_qdisc = fq.', why: 'Reduces bufferbloat (lag when someone else is downloading) for TCP traffic and speeds up downloads on lossy links.', risk: 'Safe. Shows as not available if your kernel lacks BBR.' }, changes: [sysctl('net.core.default_qdisc', 'fq'), sysctl('net.ipv4.tcp_congestion_control', 'bbr')], guard: (hw) => (hw.bbrAvailable === false ? 'Your kernel doesn\'t have BBR.' : null), tags: ['ping', 'bufferbloat', 'download'] }),
+  T({ id: 'linux-tcp-fastopen', name: 'TCP Fast Open', category: 'network', desc: 'Saves a round trip when reconnecting to servers.', long: { what: 'Sets net.ipv4.tcp_fastopen = 3.', why: 'Faster connection setup to servers that support it.', risk: 'Safe.' }, changes: [sysctl('net.ipv4.tcp_fastopen', 3)], tags: ['network', 'tcp'] }),
+  T({ id: 'linux-tcp-latency', name: 'Low-latency TCP settings', category: 'network', desc: 'No slow-start after idle; MTU problems detected automatically.', long: { what: 'Sets tcp_slow_start_after_idle = 0 and tcp_mtu_probing = 1.', why: 'Connections stay fast after quiet periods, and broken-MTU routes recover instead of hanging.', risk: 'Safe.' }, changes: [sysctl('net.ipv4.tcp_slow_start_after_idle', 0), sysctl('net.ipv4.tcp_mtu_probing', 1)], tags: ['network', 'latency', 'tcp'] }),
+  T({ id: 'linux-net-buffers', name: 'Bigger socket buffers', category: 'network', desc: 'Allows larger network buffers for games that request them.', long: { what: 'Sets net.core.rmem_max and wmem_max to 16 MB.', why: 'Helps high-bandwidth UDP traffic (streaming, voice) avoid drops. Small effect for most games.', risk: 'Safe.' }, changes: [sysctl('net.core.rmem_max', 16777216), sysctl('net.core.wmem_max', 16777216)], tags: ['network', 'udp'] }),
+  ...[
+    ['cloudflare', 'Cloudflare', ['1.1.1.1', '1.0.0.1', '2606:4700:4700::1111']], ['google', 'Google', ['8.8.8.8', '8.8.4.4', '2001:4860:4860::8888']], ['quad9', 'Quad9', ['9.9.9.9', '149.112.112.112', '2620:fe::fe']], ['adguard', 'AdGuard', ['94.140.14.14', '94.140.15.15', '2a10:50c0::ad1:ff']],
+  ].map(([k, label, servers]) => T({ id: `linux-dns-${k}`, name: `DNS: ${label}`, category: 'network', exclusive: 'dns', desc: 'Faster server lookups for launchers and matchmaking.', long: { what: `Adds a systemd-resolved drop-in using ${servers.slice(0, 2).join(' and ')}.`, why: 'Helps when your ISP\'s DNS is slow. It doesn\'t change in-game ping.', risk: 'Safe. Needs systemd-resolved. Revert deletes the drop-in.' }, changes: [{ t: 'file', path: '/etc/systemd/resolved.conf.d/99-woof-dns.conf', content: resolvedDns(label, servers) }], post: ['resolved'], guard: (hw) => (hw.resolved === false ? 'This system doesn\'t use systemd-resolved.' : null), tags: ['dns', label.toLowerCase()] })),
+  T({ id: 'linux-dns-dot', name: 'Encrypted DNS (DNS-over-TLS)', category: 'network', desc: 'Encrypts DNS lookups when the server supports it.', long: { what: 'Sets systemd-resolved DNSOverTLS = opportunistic.', why: 'Privacy: your ISP can\'t see or tamper with lookups. (Linux uses DNS-over-TLS rather than DoH.)', risk: 'Safe — falls back to normal DNS if TLS isn\'t available.' }, changes: [{ t: 'file', path: '/etc/systemd/resolved.conf.d/98-woof-dot.conf', content: '# Woof Tweaks\n[Resolve]\nDNSOverTLS=opportunistic\n' }], post: ['resolved'], guard: (hw) => (hw.resolved === false ? 'This system doesn\'t use systemd-resolved.' : null), tags: ['dns', 'privacy', 'doh', 'dot'] }),
 
-  // ---- Stability ----
-  {
-    id: 'linux-io-scheduler', name: 'I/O scheduler → none', desc: 'Lowest latency disk scheduling for NVMe and SSD drives.',
-    category: 'stability', platform: P, plan: 'plus', elevated: true, optimal: 'none',
-    check: () => { try { const o = execSync('cat /sys/block/nvme0n1/queue/scheduler 2>/dev/null || cat /sys/block/sda/queue/scheduler 2>/dev/null', { encoding: 'utf8' }); const m = o.match(/\[(\w+)\]/); return m ? m[1] : 'unknown'; } catch { return 'unknown'; } },
-    apply: () => {},
-    elevatedCmd: () => 'for d in /sys/block/*/queue/scheduler; do echo none > "$d" 2>/dev/null; done',
-    revert: () => {},
-  },
+  // ---- GPU ----
+  T({ id: 'linux-mesa-cache-size', name: 'Bigger shader cache (Mesa)', category: 'gpu', reboot: 'signout', desc: 'Keeps more compiled shaders so games stutter less after updates.', long: { what: 'Sets MESA_SHADER_CACHE_MAX_SIZE=10G for your user session.', why: 'The default 1 GB fills up fast with big games, so shaders get recompiled (stutter).', risk: 'Uses up to 10 GB of disk. Takes effect after you log out.' }, changes: [{ t: 'file', path: '~/.config/environment.d/99-woof-mesa.conf', content: '# Woof Tweaks\nMESA_SHADER_CACHE_MAX_SIZE=10G\n' }], guard: (hw) => (hw.gpuVendors && hw.gpuVendors.length && !hw.gpuVendors.some((v) => v === 'amd' || v === 'intel') ? 'Mesa drivers are for AMD/Intel GPUs.' : null), tags: ['shader', 'stutter', 'amd', 'intel'] }),
+  T({ id: 'linux-nvidia-powermizer', name: 'NVIDIA: prefer maximum performance', category: 'gpu', volatile: true, desc: 'Stops the NVIDIA driver downclocking between frames.', long: { what: 'Sets PowerMizer mode to "Prefer Maximum Performance" via nvidia-settings (X11 session).', why: 'Removes clock ramp-up stutter.', risk: 'Higher idle power. Resets when you log out. Needs the proprietary driver and X11.' }, changes: [{ t: 'nvidia', attr: '[gpu:0]/GpuPowerMizerMode', value: '1', label: 'PowerMizer mode' }], tags: ['nvidia', 'gpu', 'clocks'] }),
+  T({ id: 'linux-amd-high-perf', name: 'AMD GPU: high performance level', category: 'gpu', risk: 'moderate', volatile: true, desc: 'Locks AMD GPU clocks high (amdgpu).', long: { what: 'Sets power_dpm_force_performance_level = high (until restart).', why: 'Removes clock ramping in games that load the GPU unevenly.', risk: 'Much higher idle power and heat. Resets on restart.' }, changes: [{ t: 'sysfs', glob: '/sys/class/drm/card*/device/power_dpm_force_performance_level', value: 'high', label: 'AMD GPU performance level' }], tags: ['amd', 'gpu', 'clocks'] }),
+
+  // ---- Input / audio ----
+  T({ id: 'linux-mouse-flat', name: 'Flat mouse acceleration (GNOME)', category: 'input', desc: 'Turns off pointer acceleration for consistent aim.', long: { what: 'Sets the GNOME mouse accel-profile to "flat" (libinput).', why: 'Same movement = same distance, every time.', risk: 'Safe. KDE: System Settings → Mouse → Acceleration profile: Flat.' }, changes: [gs('org.gnome.desktop.peripherals.mouse', 'accel-profile', "'flat'")], tags: ['mouse', 'aim', 'acceleration'] }),
+  T({ id: 'linux-key-repeat', name: 'Faster key repeat (GNOME)', category: 'input', desc: 'Shorter delay and faster repeat for held keys.', long: { what: 'Sets keyboard delay 200 ms and repeat interval 25 ms.', why: 'Snappier held keys.', risk: 'Safe.' }, changes: [gs('org.gnome.desktop.peripherals.keyboard', 'delay', 'uint32 200'), gs('org.gnome.desktop.peripherals.keyboard', 'repeat-interval', 'uint32 25')], tags: ['keyboard'] }),
+  T({ id: 'linux-pipewire-lowlatency', name: 'Low-latency audio (PipeWire)', category: 'input', desc: 'Lower audio delay for footsteps and voice.', long: { what: 'Adds a PipeWire drop-in with a minimum quantum of 256 samples (~5 ms).', why: 'Default buffers can add 20 ms+ of audio latency.', risk: 'If you hear crackling, Revert. Restarts PipeWire (audio drops for a second).' }, changes: [{ t: 'file', path: '~/.config/pipewire/pipewire.conf.d/99-woof-lowlatency.conf', content: PIPEWIRE_LL }], post: ['pipewire'], tags: ['audio', 'latency', 'pipewire'] }),
+
+  // ---- Desktop & background ----
+  T({ id: 'linux-gnome-animations-off', name: 'Turn off GNOME animations', category: 'fps', desc: 'Instant window and overview transitions.', long: { what: 'Sets org.gnome.desktop.interface enable-animations = false.', why: 'Snappier desktop and less GPU work on weaker machines.', risk: 'Cosmetic.' }, changes: [gs('org.gnome.desktop.interface', 'enable-animations', 'false')], tags: ['animations', 'gnome'] }),
+  T({ id: 'linux-tracker-off', name: 'Pause GNOME file indexing', category: 'cpu', desc: 'Stops Tracker crawling your files (big game installs).', long: { what: 'Turns off Tracker file monitoring and crawling.', why: 'Indexing a new 100 GB game keeps the disk and CPU busy.', risk: 'GNOME file search won\'t find new files until you Revert.' }, changes: [gs('org.freedesktop.Tracker3.Miner.Files', 'enable-monitors', 'false'), gs('org.freedesktop.Tracker3.Miner.Files', 'crawling-interval', '-2')], tags: ['indexing', 'disk', 'cpu'] }),
+  T({ id: 'linux-cups-off', name: 'Turn off the printing service', category: 'cpu', risk: 'moderate', desc: 'Only if you never print.', long: { what: 'Disables and stops cups.service.', why: 'One fewer background service.', risk: 'You can\'t print until you Revert.' }, changes: [unit('cups.service')], tags: ['services', 'printer'] }),
+  T({ id: 'linux-modemmanager-off', name: 'Turn off ModemManager', category: 'cpu', desc: 'Desktops without a mobile-data modem don\'t need it.', long: { what: 'Disables and stops ModemManager.service.', why: 'It probes serial/USB devices (and can interfere with some controllers/Arduinos).', risk: 'Mobile broadband (4G/5G modems) stops working until you Revert.' }, changes: [unit('ModemManager.service')], tags: ['services'] }),
+  T({ id: 'linux-avahi-off', name: 'Turn off Avahi (mDNS)', category: 'network', risk: 'moderate', desc: 'Stops local network service discovery chatter.', long: { what: 'Disables avahi-daemon.service and its socket.', why: 'Less background network traffic.', risk: 'Network printers and .local hostnames may not be found automatically.' }, changes: [unit('avahi-daemon.socket'), unit('avahi-daemon.service')], tags: ['services', 'network'] }),
 ];
