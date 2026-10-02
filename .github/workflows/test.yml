@@ -49,6 +49,9 @@ jobs:
         env:
           WOOF_DEBUG: '1'
           WOOF_ONE_BY_ONE: ${{ matrix.os == 'ubuntu-latest' && '1' || '' }}
+          # System services that Revert restarts would otherwise inherit the runner's tracking id and
+          # make its orphan-process cleanup hang. (The next step lists anything new, so leftovers still show.)
+          RUNNER_TRACKING_ID: ''
       - name: Processes started during the run (should be none)
         if: always() && runner.os == 'Linux'
         run: |
