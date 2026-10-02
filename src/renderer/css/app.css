@@ -402,3 +402,4 @@ html[data-theme="light"] table.settings td:nth-child(2) { color: color-mix(in sr
 .detail-hero .game-mono { font-size: 96px; opacity: .22; letter-spacing: -.05em; }
 .mini-game .game-mono { display: none; }
 .onb .brand-mark svg, .finishing .brand-mark svg { width: 34px; height: 34px; }
+.main:focus, .main:focus-visible { outline: none; }

@@ -36,7 +36,7 @@
     hardware: async () => { await ready; return D().hw; },
     tweaks: async () => { await ready; return D().tweaks.map(view); },
     scan: async () => { await ready; await wait(300); return Object.fromEntries(D().tweaks.map((t) => [t.id, { status: statusOf(t), applied: !!st.applied[t.id], appliedAt: st.applied[t.id] || null, drift: t.id === 'win-max-refresh' && st.applied[t.id] ? 'changed' : null }])); },
-    preview: async (ids) => { await ready; await wait(400); return ids.map((id) => { const t = D().tweaks.find((x) => x.id === id); return can(t.tier) ? { id, name: t.name, risk: t.risk, admin: t.admin, reboot: t.reboot, changes: t.previewOps.map((c) => ({ ...c, from: c.from === '?' ? '(not set)' : c.from })) } : { id, name: t.name, blocked: { reason: 'Needs a higher plan' } }; }); },
+    preview: async (ids) => { await ready; await wait(400); return ids.map((id) => { const t = D().tweaks.find((x) => x.id === id); return can(t.tier) ? { id, name: t.name, risk: t.risk, admin: t.admin, reboot: t.reboot, changes: t.previewOps.map((c) => ({ ...c, from: c.from !== '?' ? c.from : c.to === '0' ? '1' : c.to === '1' ? '0' : /^AC /.test(c.to) ? 'AC 5' : /power plan/i.test(c.target) ? 'Balanced' : '(not set)' })) } : { id, name: t.name, blocked: { reason: 'Needs a higher plan' } }; }); },
     apply: async (ids) => { await progress('apply'); return res(ids, 'apply'); },
     revert: async (ids) => { await progress('revert'); return res(ids, 'revert'); },
     revertAll: async () => { await progress('revert'); return res(Object.keys(st.applied), 'revert'); },
