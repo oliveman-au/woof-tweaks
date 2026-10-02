@@ -2,7 +2,7 @@
 // Real-app smoke test (CI): launches Woof Tweaks, checks the UI loads with no errors, checks a second
 // launch just hands over to the first (single instance), then closes the window like clicking X and
 // verifies the whole app — every helper process — is gone. Linux CI runs it under xvfb-run.
-const { spawn, execSync } = require('child_process');
+const { spawn, execSync, execFileSync } = require('child_process');
 const http = require('http');
 const path = require('path');
 const electron = require('electron'); // path to the Electron binary when required from Node
@@ -18,7 +18,8 @@ function ourProcesses() {
       const out = execSync('powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.Name -like \'electron*\' } | Select-Object -ExpandProperty ProcessId"', { encoding: 'utf8' });
       return out.split(/\s+/).filter(Boolean);
     }
-    return execSync(`pgrep -f "${path.join(ROOT, 'node_modules/electron/dist')}" || true`, { encoding: 'utf8' }).split(/\s+/).filter(Boolean);
+    // No shell: a shell's own command line would contain the pattern and match itself.
+    return execFileSync('pgrep', ['-f', path.join(ROOT, 'node_modules/electron/dist')], { encoding: 'utf8' }).split(/\s+/).filter(Boolean);
   } catch { return []; }
 }
 const getJson = (p) => new Promise((resolve, reject) => http.get(`http://127.0.0.1:${PORT}${p}`, (res) => { let b = ''; res.on('data', (c) => { b += c; }); res.on('end', () => { try { resolve(JSON.parse(b)); } catch (e) { reject(e); } }); }).on('error', reject));
