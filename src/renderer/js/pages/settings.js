@@ -14,7 +14,7 @@ const lockBadge = (f) => (feature(f).allowed ? '' : ` <span class="badge lock">$
 export function render() {
   const s = S.settings; const se = S.session; const u = (S.app && S.app.update) || {};
   const win = S.info.platform === 'win32';
-  const updText = { dev: 'Development build — updates are off', checking: 'Checking…', latest: 'You\'re up to date', available: `Version ${u.version} is available`, downloading: `Downloading ${u.version}… ${u.progress || 0}%`, ready: `Version ${u.version} is ready — it installs when you quit`, error: `Couldn't check: ${u.error || ''}`, idle: '' }[u.status] || '';
+  const updText = { dev: 'Development build — updates are off', checking: 'Checking…', latest: 'You\'re up to date', available: `Version ${u.version} is available${u.manual ? ' — click Download' : ''}`, downloading: `Downloading ${u.version}… ${u.progress || 0}%`, ready: `Version ${u.version} is ready — it installs when you quit`, error: `Couldn't check: ${u.error || ''}`, idle: '' }[u.status] || '';
   return `<div class="page">
     <div class="page-head"><div><h1>Settings</h1><p>Woof Tweaks v${esc(S.info.version)} · ${esc(S.info.osName)}</p></div></div>
     <div class="grid g2" style="align-items:start">
@@ -46,7 +46,7 @@ export function render() {
         </div>
         <div class="card set-group"><h2 style="padding-top:12px">App</h2>
           <div class="set-row"><div class="l"><b>Start with ${S.info.platform === 'darwin' ? 'macOS' : S.info.platform === 'win32' ? 'Windows' : 'your desktop'}</b><span>Needed for the Game Mode Watcher to work without opening the app.</span></div>${sw('s-start', s.launchOnStartup)}</div>
-          <div class="set-row"><div class="l"><b>Automatic updates</b><span>${esc(updText)}</span></div>${sw('s-auto', s.autoUpdate !== false)}<button class="btn sm" id="check">${icon('refresh', 'sm')}Check</button>${u.status === 'ready' ? `<button class="btn sm primary" id="install">Restart & update</button>` : ''}</div>
+          <div class="set-row"><div class="l"><b>Automatic updates</b><span>${esc(updText)}${S.info.platform === 'darwin' ? ' · On a Mac new versions are downloaded from the website (macOS only auto-installs paid-signed apps).' : ''}</span></div>${sw('s-auto', s.autoUpdate !== false)}<button class="btn sm" id="check">${icon('refresh', 'sm')}Check</button>${u.status === 'ready' ? `<button class="btn sm primary" id="install">Restart & update</button>` : ''}${u.status === 'available' ? `<button class="btn sm primary" id="dl-update">${icon('download', 'sm')}Download</button>` : ''}</div>
           <div class="set-row"><div class="l"><b>What's new</b><span>See the changes in this version.</span></div><button class="btn sm" id="news">${icon('sparkle', 'sm')}Open</button></div>
           <div class="set-row"><div class="l"><b>Logs</b><span>Helpful for support.</span></div><button class="btn sm" id="logs">${icon('folder', 'sm')}Open logs folder</button></div>
           <div class="set-row"><div class="l"><b>Reset the app</b><span>Resets settings. Keeps your backups so you can still revert.</span></div><button class="btn sm danger" id="reset">Reset</button></div>
@@ -79,6 +79,7 @@ export function mount(root) {
   list('#s-low', 'lowerPriorityApps', (x) => /^[\w .()+-]{1,80}$/.test(x));
   on('#check', 'onclick', async () => { await api.checkUpdate(); toast('info', 'Checking for updates…'); });
   on('#install', 'onclick', () => api.installUpdate());
+  on('#dl-update', 'onclick', () => api.downloadUpdate());
   on('#news', 'onclick', whatsNew);
   on('#logs', 'onclick', () => api.openLogs());
   on('#support', 'onclick', () => api.openExternal(`${(S.app && S.app.site) || 'https://woof-services.stream'}/tickets`));
