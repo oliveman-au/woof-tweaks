@@ -58,8 +58,8 @@ function ConvertTo-RegValue($Value, $Kind) {
   switch ($Kind.ToString()) {
     'DWord' { return [int32]$Value }
     'QWord' { return [int64]$Value }
-    'MultiString' { return [string[]]@($Value) }
-    'Binary' { return [Convert]::FromBase64String([string]$Value) }
+    'MultiString' { return , ([string[]]@($Value)) }
+    'Binary' { return , ([Convert]::FromBase64String([string]$Value)) }
     default { return [string]$Value }
   }
 }
@@ -130,7 +130,7 @@ function Read-RegFlags($op) {
   return @{ exists = $s.exists; flags = $f }
 }
 function Set-FlagString($op, $m, [bool]$Existed) {
-  if ($m.Count -eq 0 -and -not $Existed) {
+  if ($m.Count -eq 0) {  # an empty flag string means nothing; don't leave one behind
     $k = Open-WoofKey $op.key $true $false
     if ($null -ne $k) { try { $k.DeleteValue($op.name, $false) } finally { $k.Close() } }
     return
@@ -337,9 +337,14 @@ function Restore-AdapterProp($op, $snap) {
 }
 
 # ---------- DNS ----------
+function Get-InternetAdapters {
+  # Adapters that are up AND have a default gateway (skips virtual-function / disconnected twins).
+  $idx = @(Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.IPv4DefaultGateway -or $_.IPv6DefaultGateway } | ForEach-Object { [int]$_.InterfaceIndex })
+  return @(Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Up' -and $idx -contains [int]$_.ifIndex })
+}
 function Read-Dns($op) {
   $list = @()
-  foreach ($a in (Get-ActiveAdapters)) {
+  foreach ($a in (Get-InternetAdapters)) {
     $servers = @(Get-DnsClientServerAddress -InterfaceIndex $a.ifIndex -ErrorAction SilentlyContinue | ForEach-Object { $_.ServerAddresses } | Where-Object { $_ })
     $ns = (Get-ItemProperty -LiteralPath "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$($a.InterfaceGuid)" -Name NameServer -ErrorAction SilentlyContinue).NameServer
     $list += , @{ ifIndex = [int]$a.ifIndex; adapter = $a.Name; static = [bool]($ns -and $ns.Trim()); servers = @($servers | ForEach-Object { [string]$_ }) }
@@ -348,7 +353,7 @@ function Read-Dns($op) {
   return @{ adapters = $list }
 }
 function Write-Dns($op) {
-  foreach ($a in (Get-ActiveAdapters)) { Set-DnsClientServerAddress -InterfaceIndex $a.ifIndex -ServerAddresses @($op.servers) -ErrorAction Stop }
+  foreach ($a in (Get-InternetAdapters)) { Set-DnsClientServerAddress -InterfaceIndex $a.ifIndex -ServerAddresses @($op.servers) -ErrorAction Stop }
   Clear-DnsClientCache -ErrorAction SilentlyContinue
 }
 function Restore-Dns($op, $snap) {
@@ -378,6 +383,8 @@ function Restore-Task($op, $snap) {
 
 # ---------- memory manager ----------
 function Read-MMAgent($op) {
+  $sm = Get-Service -Name SysMain -ErrorAction SilentlyContinue
+  if ($sm -and $sm.StartType -eq 'Disabled') { return @{ na = $true; why = 'Memory compression is already off because SysMain is turned off.' } }
   try { $m = Get-MMAgent -ErrorAction Stop } catch { return @{ unknown = $true; needsAdmin = $true } }
   return @{ value = [bool]$m.($op.feature) }
 }
@@ -670,8 +677,9 @@ function Invoke-WoofRunner([string]$InFile, [string]$OutFile) {
           Save-WoofOut $out $OutFile  # the snapshot is on disk before anything changes
           if ($snap.na) { $r.na = $true; continue }
           if ($snap.unknown) { throw 'Could not read the current setting, so nothing was changed.' }
-          Write-Op $op
+          # Register before writing: if a write dies half-way (e.g. 1 of 2 adapters changed), rollback still covers it.
           [void]$done.Add(@{ op = $op; snap = $snap })
+          Write-Op $op
         }
         Invoke-Post $g.post
       } catch {

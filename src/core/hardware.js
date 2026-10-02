@@ -34,7 +34,8 @@ try {
 $v = Get-Volume -DriveLetter $sd.TrimEnd(':')
 $o.systemFree = [int64]$v.SizeRemaining
 $o.disks = @(Get-PhysicalDisk | ForEach-Object { @{ name = "$($_.FriendlyName)"; media = "$($_.MediaType)"; bus = "$($_.BusType)"; size = [int64]$_.Size; health = "$($_.HealthStatus)" } })
-$o.net = @(Get-NetAdapter -Physical | Where-Object { $_.Status -eq 'Up' } | ForEach-Object { @{ name = $_.Name; guid = "$($_.InterfaceGuid)"; ifIndex = [int]$_.ifIndex; desc = "$($_.InterfaceDescription)"; wifi = ($_.PhysicalMediaType -match '802\.11' -or $_.NdisPhysicalMedium -eq 9); speed = "$($_.LinkSpeed)" } })
+$gw = @(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway -or $_.IPv6DefaultGateway } | ForEach-Object { [int]$_.InterfaceIndex })
+$o.net = @(Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $gw -contains [int]$_.ifIndex } | ForEach-Object { @{ name = $_.Name; guid = "$($_.InterfaceGuid)"; ifIndex = [int]$_.ifIndex; desc = "$($_.InterfaceDescription)"; wifi = ($_.PhysicalMediaType -match '802\.11' -or $_.NdisPhysicalMedium -eq 9); speed = "$($_.LinkSpeed)" } })
 $o.hasWifi = (@(Get-NetAdapter -Physical | Where-Object { $_.PhysicalMediaType -match '802\.11' -or $_.NdisPhysicalMedium -eq 9 }).Count -gt 0)
 $o.touch = (@(Get-CimInstance Win32_PnPEntity -Filter "PNPClass='HIDClass'" | Where-Object { $_.Name -match 'touch screen|pen' }).Count -gt 0)
 try { $bl = Get-CimInstance -Namespace 'root\cimv2\Security\MicrosoftVolumeEncryption' -ClassName Win32_EncryptableVolume -Filter "DriveLetter='$sd'" -ErrorAction Stop; $o.bitlocker = ($bl.ProtectionStatus -eq 1) } catch { $o.bitlocker = $null }

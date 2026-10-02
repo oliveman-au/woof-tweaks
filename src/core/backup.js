@@ -41,8 +41,10 @@ const get = (id) => state.applied[id] || null;
 /** Record (or extend) an applied tweak. items: [{ op, snap, admin }] */
 function record(id, info) {
   const prev = state.applied[id];
+  state.seq = (state.seq || 0) + 1;
   state.applied[id] = {
     at: new Date().toISOString(),
+    seq: state.seq,
     name: info.name,
     volatile: !!info.volatile,
     reboot: info.reboot || false,

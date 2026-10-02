@@ -348,7 +348,7 @@ async function revert(ids, opts = {}) {
       recs.push({ id, rec });
     }
     // Newest first, so changes stacked on top of each other unwind in the right order.
-    recs.sort((a, b) => String(b.rec.at).localeCompare(String(a.rec.at)));
+    recs.sort((a, b) => (b.rec.seq || 0) - (a.rec.seq || 0) || String(b.rec.at).localeCompare(String(a.rec.at)));
     if (!recs.length) return summarise('revert', results, opts);
     emit('engine:progress', { op: 'revert', msg: 'Restoring your original settings…', pct: 20 });
     // Undo in the reverse order things were applied: admin half first, then per-user half.
