@@ -1,9 +1,9 @@
 'use strict';
-const { autoUpdater } = require('electron-updater');
 
 function initUpdater(win, store) {
   if (!require('electron').app.isPackaged) return;
 
+  const { autoUpdater } = require('electron-updater');
   const autoUpdate = store.get('autoUpdate', true);
   autoUpdater.autoDownload = autoUpdate;
   autoUpdater.autoInstallOnAppQuit = true;

@@ -1,11 +1,11 @@
 'use strict';
 const { app, BrowserWindow, ipcMain, shell, nativeTheme } = require('electron');
 const path = require('path');
-const Store = require('electron-store');
+const Store = require('./store');
 const { registerIPC } = require('./ipc');
 const { initUpdater } = require('./updater');
 
-const store = new Store({ name: 'woof-tweaks-config' });
+const store = new Store('woof-tweaks-config');
 let win;
 
 function createWindow() {

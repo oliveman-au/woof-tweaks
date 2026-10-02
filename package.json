@@ -15,11 +15,10 @@
     "icon": "node scripts/gen-icon.js"
   },
   "dependencies": {
-    "electron-store": "^10.0.0",
     "electron-updater": "^6.3.9"
   },
   "devDependencies": {
-    "electron": "^35.2.1",
+    "electron": "^35.7.5",
     "electron-builder": "^26.0.12"
   },
   "allowScripts": {
