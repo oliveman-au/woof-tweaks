@@ -1,0 +1,50 @@
+appId: stream.woof-services.tweaks
+productName: Woof Tweaks
+copyright: Woof Services
+directories:
+  output: dist
+files:
+  - src/**/*
+  - "!src/renderer/**/*"
+  - assets/icon.png
+extraResources:
+  - from: src/renderer
+    to: renderer
+icon: assets/icon.png
+
+mac:
+  category: public.app-category.utilities
+  target:
+    - target: dmg
+      arch: [universal]
+    - target: zip
+      arch: [universal]
+  darkModeSupport: true
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  shortcutName: Woof Tweaks
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  category: Utility
+
+publish:
+  provider: github
+  owner: oliveman-au
+  repo: woof-tweaks
+  releaseType: release

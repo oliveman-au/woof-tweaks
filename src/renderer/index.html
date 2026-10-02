@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Woof Tweaks</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="titlebar">
+    <div class="tb-drag">
+      <svg class="tb-logo" viewBox="0 0 24 24"><ellipse cx="6.3" cy="10.6" rx="2" ry="2.5"/><ellipse cx="9.8" cy="6.6" rx="2" ry="2.5"/><ellipse cx="14.2" cy="6.6" rx="2" ry="2.5"/><ellipse cx="17.7" cy="10.6" rx="2" ry="2.5"/><path d="M12 12.2c-3 0-5.4 2.8-5.4 5 0 1.7 1.4 2.6 2.9 2.6 1.1 0 1.7-.5 2.5-.5s1.4.5 2.5.5c1.5 0 2.9-.9 2.9-2.6 0-2.2-2.4-5-5.4-5z"/></svg>
+      <span class="tb-title">Woof Tweaks</span>
+    </div>
+    <div class="tb-right">
+      <span id="plan-badge" class="plan-badge">Free</span>
+      <button id="btn-settings" class="icon-btn" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="sidebar">
+    <button class="nav-item active" data-page="games">🎮 Games</button>
+    <button class="nav-item" data-page="tweaks">🔧 All Tweaks</button>
+    <button class="nav-item" data-page="status">📊 Status</button>
+  </nav>
+
+  <main id="content">
+    <!-- GAMES PAGE -->
+    <section id="page-games" class="page active">
+      <div class="page-head">
+        <h1>Pick your game</h1>
+        <p>Select a game and we'll tune your whole machine for it in one click.</p>
+      </div>
+      <div id="games-grid" class="games-grid"></div>
+      <div class="actions-bar">
+        <button id="btn-full-optimize" class="btn btn-primary btn-lg">⚡ Full Optimize</button>
+        <button id="btn-revert-all" class="btn btn-danger btn-lg">↩️ Revert All</button>
+      </div>
+    </section>
+
+    <!-- ALL TWEAKS PAGE -->
+    <section id="page-tweaks" class="page">
+      <div class="page-head">
+        <h1>All tweaks</h1>
+        <p>Browse every optimisation by category. Check the ones you want, then apply.</p>
+      </div>
+      <div id="tweaks-list" class="tweaks-list"></div>
+      <div class="actions-bar">
+        <button id="btn-apply-selected" class="btn btn-primary">✅ Apply selected</button>
+        <button id="btn-revert-selected" class="btn btn-ghost">↩️ Revert selected</button>
+      </div>
+    </section>
+
+    <!-- STATUS PAGE -->
+    <section id="page-status" class="page">
+      <div class="page-head">
+        <h1>System status</h1>
+        <p>What's currently optimised and what's at default.</p>
+      </div>
+      <div id="status-list" class="status-list"></div>
+      <div class="status-meta">
+        <div id="backup-info"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-bg"></div>
+      <div class="modal-box">
+        <h2>Settings</h2>
+        <label class="setting-row"><span>Auto-updates</span><input type="checkbox" id="set-autoupdate" checked></label>
+        <label class="setting-row"><span>Launch on startup</span><input type="checkbox" id="set-startup"></label>
+        <div class="setting-row"><span>Account</span><button id="btn-logout" class="btn btn-ghost btn-sm">Log out</button></div>
+        <div class="setting-row"><span>Plan</span><span id="set-plan">Free</span></div>
+        <div class="setting-row"><span>Version</span><span id="set-version"></span></div>
+        <div class="modal-actions">
+          <button id="btn-upgrade" class="btn btn-primary btn-sm">Upgrade plan</button>
+          <button id="btn-close-settings" class="btn btn-ghost btn-sm">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay" class="overlay hidden">
+      <div class="login-box">
+        <div class="login-logo">
+          <svg viewBox="0 0 24 24"><ellipse cx="6.3" cy="10.6" rx="2" ry="2.5"/><ellipse cx="9.8" cy="6.6" rx="2" ry="2.5"/><ellipse cx="14.2" cy="6.6" rx="2" ry="2.5"/><ellipse cx="17.7" cy="10.6" rx="2" ry="2.5"/><path d="M12 12.2c-3 0-5.4 2.8-5.4 5 0 1.7 1.4 2.6 2.9 2.6 1.1 0 1.7-.5 2.5-.5s1.4.5 2.5.5c1.5 0 2.9-.9 2.9-2.6 0-2.2-2.4-5-5.4-5z"/></svg>
+        </div>
+        <h1>Woof Tweaks</h1>
+        <p>Log in to sync your plan and settings across devices.</p>
+        <button class="btn btn-primary btn-lg login-btn" data-method="discord">Log in with Discord</button>
+        <button class="btn btn-ghost btn-lg login-btn" data-method="google">Log in with Google</button>
+        <button id="btn-skip-login" class="btn btn-ghost btn-sm">Continue without account</button>
+        <p class="login-fine">Free plan — no account required. Log in to unlock paid features.</p>
+      </div>
+    </div>
+
+    <!-- UPDATE BANNER -->
+    <div id="update-banner" class="update-banner hidden">
+      <span>🎉 Update available: <b id="update-version"></b></span>
+      <button id="btn-update" class="btn btn-primary btn-sm">Install & restart</button>
+      <button id="btn-dismiss-update" class="btn btn-ghost btn-sm">Later</button>
+    </div>
+  </main>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
