@@ -7,9 +7,13 @@ files:
   - src/**/*
   - "!src/renderer/**/*"
   - assets/icon.png
+  - package.json
 extraResources:
   - from: src/renderer
     to: renderer
+    filter:
+      - "**/*"
+      - "!dev/mock-data.js"
 icon: assets/icon.png
 
 mac:

@@ -12,9 +12,10 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm ci --ignore-scripts
@@ -35,8 +36,8 @@ jobs:
       WOOF_ELEVATE: sudo
       WOOF_REPORT: full-run-report.json
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm ci --ignore-scripts
@@ -45,8 +46,30 @@ jobs:
         env:
           WOOF_DEBUG: '1'
           WOOF_ONE_BY_ONE: ${{ matrix.os == 'ubuntu-latest' && '1' || '' }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: full-run-${{ matrix.os }}
           path: full-run-report.json
+
+  # Launches the real app: UI loads with no errors, single instance, and clicking X quits everything.
+  app:
+    needs: unit
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Quit test (Linux, virtual display)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node test/system/quit-test.js
+      - name: Quit test
+        if: runner.os != 'Linux'
+        run: node test/system/quit-test.js
