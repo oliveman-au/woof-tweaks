@@ -48,7 +48,18 @@ const VOLATILE = (op, a, b) => {
   const report = { os: registry.osName, hardware: hardware.summary(hw), applied: [], failed: [], skipped: [], mismatches: [], rounds: [] };
   for (let r = 0; r < rounds; r++) {
     const ids = [...byGroup.values()].map((l) => l[r]).filter(Boolean);
-    const res = await engine.apply(ids, { restorePoint: false });
+    let res;
+    if (process.env.WOOF_ONE_BY_ONE) {
+      // One tweak at a time with timings, to pinpoint anything slow or stuck.
+      res = { results: [], applied: 0, failed: 0 };
+      for (const id of ids) {
+        const t1 = Date.now();
+        console.log(`[full-run] applying ${id}…`);
+        const one = await engine.apply([id], { restorePoint: false });
+        console.log(`[full-run]   ${id}: ${one.applied ? 'applied' : one.failed ? 'FAILED' : 'skipped'} in ${Date.now() - t1} ms`);
+        res.results.push(...one.results); res.applied += one.applied; res.failed += one.failed;
+      }
+    } else res = await engine.apply(ids, { restorePoint: false });
     for (const x of res.results) {
       if (x.ok && !x.skipped) report.applied.push(x.id);
       else if (x.skipped) report.skipped.push({ id: x.id, reason: x.reason || x.code });

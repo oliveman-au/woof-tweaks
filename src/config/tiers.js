@@ -56,7 +56,7 @@ const TWEAKS = {
   // ── macOS
   'mac-reduce-motion': 'free', 'mac-reduce-transparency': 'free', 'mac-window-anim-off': 'free', 'mac-dock-fast': 'free', 'mac-dock-bounce-off': 'free',
   'mac-spaces-fixed': 'free', 'mac-finder-anim-off': 'free', 'mac-low-power-off': 'free', 'mac-mouse-accel-off': 'free', 'mac-key-repeat-fast': 'free', 'mac-press-hold-off': 'free',
-  'mac-app-nap-off': 'plus', 'mac-spotlight-off': 'plus', 'mac-siri-off': 'plus', 'mac-auto-update-download-off': 'plus', 'mac-analytics-off': 'plus', 'mac-crash-dialog-off': 'plus',
+  'mac-app-nap-off': 'plus', 'mac-spotlight-off': 'plus', 'mac-siri-off': 'plus', 'mac-auto-update-download-off': 'plus', 'mac-crash-dialog-off': 'plus',
   'mac-dns-cloudflare': 'plus', 'mac-dns-google': 'plus', 'mac-dns-quad9': 'plus', 'mac-dns-adguard': 'plus',
   'mac-awdl-off': 'pro', 'mac-delayed-ack-off': 'pro', 'mac-metal-hud': 'pro', 'mac-high-power': 'pro',
 

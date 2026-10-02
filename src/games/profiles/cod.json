@@ -127,5 +127,6 @@
   ],
   "notes": [
     "Shader pre-loading runs on first launch after an update — let it finish before playing."
-  ]
+  ],
+  "mono": "COD"
 }

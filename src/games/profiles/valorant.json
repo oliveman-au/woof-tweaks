@@ -130,5 +130,6 @@
   "notes": [
     "Vanguard needs to start with Windows — none of our tweaks touch it.",
     "If Vanguard ever complains, revert \"Launch at High priority\" for this game."
-  ]
+  ],
+  "mono": "VAL"
 }

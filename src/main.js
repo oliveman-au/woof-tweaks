@@ -3,7 +3,7 @@ const { app, BrowserWindow, ipcMain, shell, nativeTheme } = require('electron');
 const path = require('path');
 const Store = require('./store');
 const exec = require('./core/exec');
-const { registerIPC, shutdown, isBusy, waitIdle } = require('./ipc');
+const { registerIPC, shutdown, beforeQuit, isBusy, waitIdle } = require('./ipc');
 const { initUpdater, stopUpdater } = require('./updater');
 
 // One copy of the app at a time: a second launch just focuses the window we already have.
@@ -59,19 +59,20 @@ if (!app.requestSingleInstanceLock()) {
     win.on('close', (e) => {
       try { if (!win.isMinimized() && !win.isMaximized()) store.set('windowBounds', win.getBounds()); } catch { /* ignore */ }
       // Clicking X quits the whole app on every platform. If a change is mid-way, finish it first.
-      if (isBusy() && !quitting) {
+      if (!quitting && isBusy()) {
         e.preventDefault();
         finishSafelyThenQuit();
       }
     });
-    win.on('closed', () => { win = null; });
+    win.on('closed', () => { win = null; app.quit(); }); // also closes the overlay window, if open
   }
 
   function finishSafelyThenQuit() {
     if (finishing) return;
     finishing = true;
-    try { win && win.webContents.send('app:finishing'); } catch { /* window may be gone */ }
-    waitIdle(120_000).finally(() => { quitting = true; app.quit(); });
+    try { if (isBusy() && win) win.webContents.send('app:finishing'); } catch { /* window may be gone */ }
+    // Let a running change finish (never kill it half-way), then undo anything the Game Mode Watcher applied.
+    waitIdle(120_000).then(() => beforeQuit()).finally(() => { quitting = true; app.quit(); });
   }
 
   app.whenReady().then(() => {
@@ -85,12 +86,9 @@ if (!app.requestSingleInstanceLock()) {
   app.on('window-all-closed', () => app.quit());
 
   app.on('before-quit', (e) => {
-    if (isBusy() && !quitting) {
-      e.preventDefault();
-      finishSafelyThenQuit();
-      return;
-    }
-    quitting = true;
+    if (quitting) return;
+    e.preventDefault();
+    finishSafelyThenQuit();
   });
 
   app.on('will-quit', () => {

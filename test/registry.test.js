@@ -63,3 +63,10 @@ test('30+ game profiles, each with a tier', () => {
   assert.ok(p.length >= 31, `only ${p.length}`);
   for (const x of p) assert.ok(['free', 'plus', 'pro', 'ultra'].includes(x.tier), `${x.id} tier ${x.tier}`);
 });
+
+test('no tweak is dropped by validation at load (registry logs nothing)', () => {
+  for (const os of OSES) {
+    const out = require('child_process').spawnSync(process.execPath, [path.join(__dirname, 'helpers', 'registry-dump.js')], { env: { ...process.env, WOOF_FAKE_OS: os }, encoding: 'utf8' });
+    assert.strictEqual(out.stderr.trim(), '', `${os}: ${out.stderr}`);
+  }
+});

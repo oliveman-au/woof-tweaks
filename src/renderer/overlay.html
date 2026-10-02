@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>Woof Tweaks overlay</title>
+  <style>
+    html, body { margin: 0; background: transparent; overflow: hidden; font: 600 12px/1.35 "Segoe UI", -apple-system, sans-serif; color: #eef0fa; user-select: none; }
+    .box { margin: 6px; padding: 9px 11px; border-radius: 12px; background: rgba(9, 10, 17, .78); border: 1px solid rgba(139, 123, 255, .45); box-shadow: 0 8px 26px rgba(0, 0, 0, .45); }
+    .h { display: flex; align-items: center; gap: 6px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #a99cff; margin-bottom: 4px; }
+    .g { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; font-variant-numeric: tabular-nums; }
+    .k { color: #8c91b3; } .v { text-align: right; } .hot { color: #ffb547; } .crit { color: #ff6b81; }
+  </style>
+</head>
+<body>
+  <div class="box"><div class="h">🐾 Woof Tweaks</div><div class="g" id="g"><span class="k">CPU</span><span class="v">…</span></div></div>
+  <script src="js/overlay.js"></script>
+</body>
+</html>

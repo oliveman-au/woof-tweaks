@@ -129,5 +129,6 @@
   "notes": [
     "Java Edition: paste the JVM arguments in the Launcher → Installations → Edit → More options.",
     "Nagle off helps Java Edition because it uses TCP."
-  ]
+  ],
+  "mono": "MC"
 }

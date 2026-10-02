@@ -98,5 +98,6 @@
   ],
   "notes": [
     "Rust needs lots of RAM — 16 GB minimum; fixed page file helps on 16 GB."
-  ]
+  ],
+  "mono": "RUST"
 }

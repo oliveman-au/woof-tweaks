@@ -126,5 +126,6 @@
   ],
   "notes": [
     "Matchmaking region is set in Settings → Game → Matchmaking Region (shows ping per region)."
-  ]
+  ],
+  "mono": "FN"
 }

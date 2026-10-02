@@ -140,5 +140,6 @@
   ],
   "notes": [
     "Let shaders finish compiling on first launch after updates."
-  ]
+  ],
+  "mono": "MR"
 }

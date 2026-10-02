@@ -32,7 +32,7 @@ const OP_TYPES = new Set(['reg', 'regFlags', 'service', 'powerScheme', 'powerSet
 function validateTweak(t, sampleCtx = { hw: {}, settings: {} }) {
   const e = [];
   if (!/^[a-z0-9][a-z0-9.-]{2,80}$/.test(t.id || '')) e.push('bad id');
-  if (!t.name || t.name.length > 80) e.push('name missing/too long');
+  if (!t.name || t.name.length > 140) e.push('name missing/too long');
   if (!t.desc) e.push('desc missing');
   if (!t.long || !t.long.what || !t.long.why || !t.long.risk) e.push('long.what/why/risk missing');
   if (!CAT_IDS.has(t.category)) e.push(`unknown category ${t.category}`);

@@ -99,5 +99,6 @@
   "notes": [
     "Roblox updates often and reinstalls itself into a new folder; Woof Tweaks finds the latest version automatically.",
     "Woof Tweaks never uses FPS unlockers or injectors — those can get accounts banned."
-  ]
+  ],
+  "mono": "RBX"
 }

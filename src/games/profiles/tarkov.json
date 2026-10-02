@@ -120,5 +120,6 @@
   ],
   "notes": [
     "Tarkov is very RAM-hungry: \"Clear standby memory\" (Cleanup) helps on 16 GB PCs."
-  ]
+  ],
+  "mono": "EFT"
 }
