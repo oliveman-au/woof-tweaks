@@ -1,0 +1,100 @@
+{
+  "id": "lethalcompany",
+  "name": "Lethal Company",
+  "short": "Lethal Company",
+  "genre": "Co-op horror",
+  "colors": [
+    "#ff3b30",
+    "#120d0a"
+  ],
+  "competitive": false,
+  "antiCheat": null,
+  "platforms": [
+    "win32",
+    "linux"
+  ],
+  "detect": {
+    "steam": 1966720,
+    "process": [
+      "Lethal Company.exe"
+    ],
+    "exe": [
+      "Lethal Company.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache"
+  ],
+  "launchOptions": {
+    "linux": "gamemoderun %command%"
+  },
+  "settings": [
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": ""
+    },
+    {
+      "setting": "Frame cap",
+      "value": "Your refresh rate",
+      "why": ""
+    },
+    {
+      "setting": "Mods",
+      "value": "Keep mod count sensible — most stutter comes from heavy mods",
+      "why": ""
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

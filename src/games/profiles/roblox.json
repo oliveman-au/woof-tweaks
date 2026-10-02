@@ -1,0 +1,103 @@
+{
+  "id": "roblox",
+  "name": "Roblox",
+  "short": "Roblox",
+  "genre": "Platform",
+  "colors": [
+    "#e2231a",
+    "#232527"
+  ],
+  "competitive": false,
+  "antiCheat": null,
+  "platforms": [
+    "win32",
+    "darwin"
+  ],
+  "detect": {
+    "process": [
+      "RobloxPlayerBeta.exe",
+      "RobloxPlayer"
+    ],
+    "exe": [
+      "RobloxPlayerBeta.exe"
+    ],
+    "roblox": true,
+    "macApp": "Roblox"
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart"
+    ],
+    "darwin": [
+      "mac-reduce-motion",
+      "mac-reduce-transparency",
+      "mac-dock-bounce-off",
+      "mac-spaces-fixed",
+      "mac-low-power-off",
+      "mac-press-hold-off",
+      "mac-app-nap-off",
+      "mac-high-power"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority"
+  ],
+  "launchOptions": {},
+  "settings": [
+    {
+      "setting": "Graphics mode",
+      "value": "Manual",
+      "why": "Lets you set quality yourself."
+    },
+    {
+      "setting": "Graphics quality",
+      "value": "3–5 bars on weak PCs, 6–8 on mid-range",
+      "why": "Each bar costs FPS; most games look fine at 5."
+    },
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": "Lowest input lag and best frame pacing."
+    },
+    {
+      "setting": "Max frame rate (in-game settings)",
+      "value": "Your refresh rate (e.g. 144)",
+      "why": "Roblox now lets you raise the old 60 FPS cap in Settings."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": [
+    "Roblox updates often and reinstalls itself into a new folder; Woof Tweaks finds the latest version automatically.",
+    "Woof Tweaks never uses FPS unlockers or injectors — those can get accounts banned."
+  ]
+}

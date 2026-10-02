@@ -1,0 +1,116 @@
+{
+  "id": "deltaforce",
+  "name": "Delta Force",
+  "short": "Delta Force",
+  "genre": "Tactical shooter",
+  "colors": [
+    "#2ea043",
+    "#0d1117"
+  ],
+  "competitive": true,
+  "antiCheat": "ACE",
+  "platforms": [
+    "win32"
+  ],
+  "detect": {
+    "steam": 2507950,
+    "process": [
+      "DeltaForceClient-Win64-Shipping.exe"
+    ],
+    "exe": [
+      "DeltaForceClient-Win64-Shipping.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-mouse-accel-off",
+      "win-pointer-speed-6",
+      "win-usb-suspend-off",
+      "win-core-parking-off",
+      "win-cpu-min-100",
+      "win-power-throttling-off",
+      "win-windowed-opt",
+      "win-vrr",
+      "win-gpu-priority",
+      "win-priority-separation",
+      "win-system-responsiveness",
+      "win-network-throttling-off",
+      "win-rsc-off",
+      "win-nic-eee-off",
+      "win-nic-interrupt-mod-off",
+      "win-wifi-max-perf",
+      "win-wifi-roam-low",
+      "win-delivery-opt-off",
+      "win-hags-on",
+      "win-pagefile-fixed"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "dscp",
+    "defender",
+    "regionPing"
+  ],
+  "launchOptions": {},
+  "settings": [
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": "Lowest input lag and best frame pacing."
+    },
+    {
+      "setting": "NVIDIA Reflex",
+      "value": "On + Boost",
+      "why": "Cuts system latency the most when your GPU is maxed out (NVIDIA only)."
+    },
+    {
+      "setting": "Super resolution",
+      "value": "DLSS/FSR Quality",
+      "why": ""
+    },
+    {
+      "setting": "Shadows / Effects",
+      "value": "Low",
+      "why": ""
+    },
+    {
+      "setting": "V-Sync",
+      "value": "Off",
+      "why": "Adds input lag. Use G-Sync/FreeSync + a frame cap instead."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

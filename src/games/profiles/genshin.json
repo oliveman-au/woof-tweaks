@@ -1,0 +1,93 @@
+{
+  "id": "genshin",
+  "name": "Genshin Impact",
+  "short": "Genshin Impact",
+  "genre": "Action RPG",
+  "colors": [
+    "#f0c27b",
+    "#4b4e8f"
+  ],
+  "competitive": false,
+  "antiCheat": null,
+  "platforms": [
+    "win32"
+  ],
+  "detect": {
+    "hoyoplay": "Genshin Impact",
+    "process": [
+      "GenshinImpact.exe",
+      "YuanShen.exe"
+    ],
+    "exe": [
+      "GenshinImpact.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority"
+  ],
+  "launchOptions": {},
+  "settings": [
+    {
+      "setting": "FPS",
+      "value": "60 (or 120 with a supported setup)",
+      "why": ""
+    },
+    {
+      "setting": "Render resolution",
+      "value": "1.0",
+      "why": ""
+    },
+    {
+      "setting": "Shadow quality",
+      "value": "Medium",
+      "why": ""
+    },
+    {
+      "setting": "Volumetric fog",
+      "value": "Off",
+      "why": ""
+    },
+    {
+      "setting": "Crowd density",
+      "value": "Low",
+      "why": "Reduces CPU load in cities."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

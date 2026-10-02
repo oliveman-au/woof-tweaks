@@ -1,0 +1,112 @@
+{
+  "id": "eldenring",
+  "name": "Elden Ring",
+  "short": "Elden Ring",
+  "genre": "Action RPG",
+  "colors": [
+    "#c9a227",
+    "#1a1814"
+  ],
+  "competitive": false,
+  "antiCheat": "Easy Anti-Cheat",
+  "platforms": [
+    "win32",
+    "linux"
+  ],
+  "detect": {
+    "steam": 1245620,
+    "process": [
+      "eldenring.exe"
+    ],
+    "exe": [
+      "eldenring.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-hags-on"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "defender"
+  ],
+  "launchOptions": {
+    "linux": "gamemoderun %command%"
+  },
+  "settings": [
+    {
+      "setting": "Screen mode",
+      "value": "Fullscreen",
+      "why": ""
+    },
+    {
+      "setting": "Ray tracing",
+      "value": "Off",
+      "why": ""
+    },
+    {
+      "setting": "Global illumination / Grass quality",
+      "value": "Medium / Medium",
+      "why": ""
+    },
+    {
+      "setting": "Motion blur",
+      "value": "Off",
+      "why": ""
+    },
+    {
+      "setting": "Frame rate",
+      "value": "Capped at 60 by the game",
+      "why": "Woof Tweaks doesn't use FPS unlock mods (they disable online play)."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

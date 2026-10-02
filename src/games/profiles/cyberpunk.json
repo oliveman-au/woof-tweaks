@@ -1,0 +1,128 @@
+{
+  "id": "cyberpunk",
+  "name": "Cyberpunk 2077",
+  "short": "Cyberpunk 2077",
+  "genre": "Open world RPG",
+  "colors": [
+    "#fcee0a",
+    "#00f0ff"
+  ],
+  "competitive": false,
+  "antiCheat": null,
+  "platforms": [
+    "win32",
+    "darwin",
+    "linux"
+  ],
+  "detect": {
+    "steam": 1091500,
+    "gog": "Cyberpunk 2077",
+    "epic": "Cyberpunk 2077",
+    "process": [
+      "Cyberpunk2077.exe",
+      "Cyberpunk2077"
+    ],
+    "exe": [
+      "Cyberpunk2077.exe"
+    ],
+    "macApp": "Cyberpunk 2077"
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-hags-on",
+      "win-pagefile-fixed"
+    ],
+    "darwin": [
+      "mac-reduce-motion",
+      "mac-reduce-transparency",
+      "mac-dock-bounce-off",
+      "mac-spaces-fixed",
+      "mac-low-power-off",
+      "mac-press-hold-off",
+      "mac-app-nap-off",
+      "mac-high-power"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "defender"
+  ],
+  "launchOptions": {
+    "linux": "gamemoderun %command%"
+  },
+  "settings": [
+    {
+      "setting": "Upscaling",
+      "value": "DLSS/FSR/XeSS Quality or Balanced",
+      "why": ""
+    },
+    {
+      "setting": "Frame generation",
+      "value": "On for single-player if you have 60+ base FPS",
+      "why": "Smoothness boost; adds a bit of latency."
+    },
+    {
+      "setting": "Crowd density",
+      "value": "Medium",
+      "why": "Big CPU saver."
+    },
+    {
+      "setting": "Screen space reflections",
+      "value": "High (not Psycho)",
+      "why": "Psycho is a huge cost."
+    },
+    {
+      "setting": "Ray tracing",
+      "value": "Off on mid-range GPUs",
+      "why": ""
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

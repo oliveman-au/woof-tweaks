@@ -1,0 +1,105 @@
+{
+  "id": "gta5",
+  "name": "GTA V / GTA Online",
+  "short": "GTA V / GTA Online",
+  "genre": "Open world",
+  "colors": [
+    "#2f8f3a",
+    "#111"
+  ],
+  "competitive": false,
+  "antiCheat": "BattlEye",
+  "platforms": [
+    "win32"
+  ],
+  "detect": {
+    "steam": 271590,
+    "rockstar": "Grand Theft Auto V",
+    "epic": "Grand Theft Auto V",
+    "process": [
+      "GTA5.exe",
+      "GTA5_Enhanced.exe",
+      "PlayGTAV.exe"
+    ],
+    "exe": [
+      "GTA5.exe",
+      "GTA5_Enhanced.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-pagefile-fixed"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "defender"
+  ],
+  "launchOptions": {},
+  "settings": [
+    {
+      "setting": "Version",
+      "value": "Enhanced (DX12) if your PC supports it",
+      "why": "Better performance on modern GPUs."
+    },
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": "Lowest input lag and best frame pacing."
+    },
+    {
+      "setting": "Grass quality",
+      "value": "High (not Ultra)",
+      "why": "Ultra grass is a huge FPS sink."
+    },
+    {
+      "setting": "MSAA",
+      "value": "Off — use FXAA or DLSS",
+      "why": ""
+    },
+    {
+      "setting": "Extended distance scaling",
+      "value": "Low",
+      "why": ""
+    },
+    {
+      "setting": "V-Sync",
+      "value": "Off",
+      "why": "Adds input lag. Use G-Sync/FreeSync + a frame cap instead."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

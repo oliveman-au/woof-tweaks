@@ -1,0 +1,112 @@
+{
+  "id": "helldivers2",
+  "name": "Helldivers 2",
+  "short": "Helldivers 2",
+  "genre": "Co-op shooter",
+  "colors": [
+    "#ffe710",
+    "#1a1a1a"
+  ],
+  "competitive": false,
+  "antiCheat": "GameGuard",
+  "platforms": [
+    "win32",
+    "linux"
+  ],
+  "detect": {
+    "steam": 553850,
+    "process": [
+      "helldivers2.exe"
+    ],
+    "exe": [
+      "helldivers2.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-pagefile-fixed"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "defender"
+  ],
+  "launchOptions": {
+    "linux": "gamemoderun %command%"
+  },
+  "settings": [
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": ""
+    },
+    {
+      "setting": "Render scale",
+      "value": "Native (or Quality)",
+      "why": ""
+    },
+    {
+      "setting": "Shadow / Particle quality",
+      "value": "Medium",
+      "why": ""
+    },
+    {
+      "setting": "Space quality",
+      "value": "Low",
+      "why": "Costs FPS for little visual gain."
+    },
+    {
+      "setting": "V-Sync",
+      "value": "Off",
+      "why": "Adds input lag. Use G-Sync/FreeSync + a frame cap instead."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

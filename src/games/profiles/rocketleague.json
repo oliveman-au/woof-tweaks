@@ -1,0 +1,135 @@
+{
+  "id": "rocketleague",
+  "name": "Rocket League",
+  "short": "Rocket League",
+  "genre": "Sports",
+  "colors": [
+    "#0d6efd",
+    "#ff8c00"
+  ],
+  "competitive": true,
+  "antiCheat": "Easy Anti-Cheat",
+  "platforms": [
+    "win32",
+    "linux"
+  ],
+  "detect": {
+    "steam": 252950,
+    "epic": "Rocket League",
+    "process": [
+      "RocketLeague.exe"
+    ],
+    "exe": [
+      "RocketLeague.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-mouse-accel-off",
+      "win-pointer-speed-6",
+      "win-usb-suspend-off",
+      "win-core-parking-off",
+      "win-cpu-min-100",
+      "win-power-throttling-off",
+      "win-windowed-opt",
+      "win-vrr",
+      "win-gpu-priority",
+      "win-priority-separation",
+      "win-system-responsiveness",
+      "win-network-throttling-off",
+      "win-rsc-off",
+      "win-nic-eee-off",
+      "win-nic-interrupt-mod-off",
+      "win-wifi-max-perf",
+      "win-wifi-roam-low",
+      "win-delivery-opt-off"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits",
+      "linux-mouse-flat",
+      "linux-bbr",
+      "linux-tcp-latency"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "dscp",
+    "defender",
+    "regionPing"
+  ],
+  "launchOptions": {
+    "linux": "gamemoderun %command%"
+  },
+  "settings": [
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": ""
+    },
+    {
+      "setting": "Max FPS",
+      "value": "Uncapped or 250+",
+      "why": "Physics ticks at 120 Hz — higher FPS lowers input delay."
+    },
+    {
+      "setting": "Render quality",
+      "value": "High Performance",
+      "why": ""
+    },
+    {
+      "setting": "V-Sync",
+      "value": "Off",
+      "why": "Adds input lag. Use G-Sync/FreeSync + a frame cap instead."
+    },
+    {
+      "setting": "Weather / Dynamic shadows / Motion blur",
+      "value": "Off",
+      "why": "Visual noise and FPS cost."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

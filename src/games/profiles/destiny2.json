@@ -1,0 +1,114 @@
+{
+  "id": "destiny2",
+  "name": "Destiny 2",
+  "short": "Destiny 2",
+  "genre": "Looter shooter",
+  "colors": [
+    "#c9c9c9",
+    "#2b2b3c"
+  ],
+  "competitive": true,
+  "antiCheat": "BattlEye",
+  "platforms": [
+    "win32"
+  ],
+  "detect": {
+    "steam": 1085660,
+    "process": [
+      "destiny2.exe"
+    ],
+    "exe": [
+      "destiny2.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-mouse-accel-off",
+      "win-pointer-speed-6",
+      "win-usb-suspend-off",
+      "win-core-parking-off",
+      "win-cpu-min-100",
+      "win-power-throttling-off",
+      "win-windowed-opt",
+      "win-vrr",
+      "win-gpu-priority",
+      "win-priority-separation",
+      "win-system-responsiveness",
+      "win-network-throttling-off",
+      "win-rsc-off",
+      "win-nic-eee-off",
+      "win-nic-interrupt-mod-off",
+      "win-wifi-max-perf",
+      "win-wifi-roam-low",
+      "win-delivery-opt-off"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "dscp",
+    "defender",
+    "regionPing"
+  ],
+  "launchOptions": {},
+  "settings": [
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": "Lowest input lag and best frame pacing."
+    },
+    {
+      "setting": "Frame rate cap",
+      "value": "Your refresh rate",
+      "why": ""
+    },
+    {
+      "setting": "Screen space ambient occlusion",
+      "value": "Off",
+      "why": ""
+    },
+    {
+      "setting": "Depth of field / Motion blur",
+      "value": "Off / Off",
+      "why": ""
+    },
+    {
+      "setting": "V-Sync",
+      "value": "Off",
+      "why": "Adds input lag. Use G-Sync/FreeSync + a frame cap instead."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

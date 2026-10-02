@@ -1,0 +1,104 @@
+{
+  "id": "general",
+  "name": "General (all games)",
+  "short": "General (all games)",
+  "genre": "Everything",
+  "colors": [
+    "#8b7bff",
+    "#3a2f8f"
+  ],
+  "competitive": false,
+  "antiCheat": null,
+  "platforms": [
+    "win32",
+    "darwin",
+    "linux",
+    "chromeos"
+  ],
+  "detect": {},
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart"
+    ],
+    "darwin": [
+      "mac-reduce-motion",
+      "mac-reduce-transparency",
+      "mac-dock-bounce-off",
+      "mac-spaces-fixed",
+      "mac-low-power-off",
+      "mac-press-hold-off",
+      "mac-app-nap-off",
+      "mac-high-power"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits"
+    ]
+  },
+  "extras": [],
+  "launchOptions": {},
+  "settings": [
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": "Lowest input lag and best frame pacing."
+    },
+    {
+      "setting": "V-Sync",
+      "value": "Off",
+      "why": "Adds input lag. Use G-Sync/FreeSync + a frame cap instead."
+    },
+    {
+      "setting": "Frame rate limit",
+      "value": "Your monitor refresh rate minus 3 (e.g. 141 on 144 Hz)",
+      "why": "A stable cap gives smoother frame times than uncapped spikes."
+    },
+    {
+      "setting": "Upscaling",
+      "value": "DLSS / FSR / XeSS \"Quality\"",
+      "why": "Big FPS gain for little visual loss at 1440p and up."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": [
+    "Safe all-round settings for any game. Pick a specific game for more."
+  ]
+}

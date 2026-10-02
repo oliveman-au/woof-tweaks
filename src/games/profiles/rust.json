@@ -1,0 +1,102 @@
+{
+  "id": "rust",
+  "name": "Rust",
+  "short": "Rust",
+  "genre": "Survival",
+  "colors": [
+    "#cd412b",
+    "#1e1e1e"
+  ],
+  "competitive": false,
+  "antiCheat": "Easy Anti-Cheat",
+  "platforms": [
+    "win32"
+  ],
+  "detect": {
+    "steam": 252490,
+    "process": [
+      "RustClient.exe"
+    ],
+    "exe": [
+      "RustClient.exe"
+    ]
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-pagefile-fixed"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "defender"
+  ],
+  "launchOptions": {},
+  "settings": [
+    {
+      "setting": "Display mode",
+      "value": "Fullscreen",
+      "why": "Lowest input lag and best frame pacing."
+    },
+    {
+      "setting": "Graphics quality",
+      "value": "Fastest–Medium",
+      "why": ""
+    },
+    {
+      "setting": "Draw distance",
+      "value": "1500–2500",
+      "why": ""
+    },
+    {
+      "setting": "Shadow quality",
+      "value": "0–1",
+      "why": ""
+    },
+    {
+      "setting": "Grass displacement",
+      "value": "Off",
+      "why": ""
+    },
+    {
+      "setting": "V-Sync",
+      "value": "Off",
+      "why": "Adds input lag. Use G-Sync/FreeSync + a frame cap instead."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": [
+    "Rust needs lots of RAM — 16 GB minimum; fixed page file helps on 16 GB."
+  ]
+}

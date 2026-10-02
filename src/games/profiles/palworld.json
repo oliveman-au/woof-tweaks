@@ -1,0 +1,125 @@
+{
+  "id": "palworld",
+  "name": "Palworld",
+  "short": "Palworld",
+  "genre": "Survival",
+  "colors": [
+    "#53c6ff",
+    "#1f3b4d"
+  ],
+  "competitive": false,
+  "antiCheat": null,
+  "platforms": [
+    "win32",
+    "darwin",
+    "linux"
+  ],
+  "detect": {
+    "steam": 1623730,
+    "process": [
+      "Palworld-Win64-Shipping.exe",
+      "Palworld"
+    ],
+    "exe": [
+      "Palworld-Win64-Shipping.exe"
+    ],
+    "macApp": "Palworld"
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-pagefile-fixed"
+    ],
+    "darwin": [
+      "mac-reduce-motion",
+      "mac-reduce-transparency",
+      "mac-dock-bounce-off",
+      "mac-spaces-fixed",
+      "mac-low-power-off",
+      "mac-press-hold-off",
+      "mac-app-nap-off",
+      "mac-high-power"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits"
+    ]
+  },
+  "extras": [
+    "fso",
+    "gpuPreference",
+    "priority",
+    "shaderCache",
+    "defender"
+  ],
+  "launchOptions": {
+    "linux": "gamemoderun %command%"
+  },
+  "settings": [
+    {
+      "setting": "Screen mode",
+      "value": "Fullscreen",
+      "why": ""
+    },
+    {
+      "setting": "Anti-aliasing",
+      "value": "DLSS/TSR",
+      "why": ""
+    },
+    {
+      "setting": "View distance",
+      "value": "Medium",
+      "why": ""
+    },
+    {
+      "setting": "Grass / Shadows",
+      "value": "Medium / Medium",
+      "why": ""
+    },
+    {
+      "setting": "Motion blur",
+      "value": "Off",
+      "why": ""
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": []
+}

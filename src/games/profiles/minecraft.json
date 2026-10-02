@@ -1,0 +1,133 @@
+{
+  "id": "minecraft",
+  "name": "Minecraft",
+  "short": "Minecraft",
+  "genre": "Sandbox",
+  "colors": [
+    "#62b47a",
+    "#3b2a1a"
+  ],
+  "competitive": false,
+  "antiCheat": null,
+  "platforms": [
+    "win32",
+    "darwin",
+    "linux"
+  ],
+  "detect": {
+    "minecraft": true,
+    "process": [
+      "javaw.exe",
+      "Minecraft.Windows.exe",
+      "java"
+    ],
+    "exe": []
+  },
+  "tweaks": {
+    "win32": [
+      "win-plan-woof",
+      "win-game-mode",
+      "win-game-dvr-off",
+      "win-game-bar-off",
+      "win-fso-off",
+      "win-visual-fx",
+      "win-transparency-off",
+      "win-background-apps-off",
+      "win-max-refresh",
+      "win-ads-off",
+      "win-sticky-keys-off",
+      "win-hibernate-off",
+      "win-tdr-delay",
+      "win-fth-off",
+      "win-pcie-aspm-off",
+      "win-sysmain-off",
+      "win-compat-telemetry-off",
+      "win-update-no-restart",
+      "win-nagle-off"
+    ],
+    "darwin": [
+      "mac-reduce-motion",
+      "mac-reduce-transparency",
+      "mac-dock-bounce-off",
+      "mac-spaces-fixed",
+      "mac-low-power-off",
+      "mac-press-hold-off",
+      "mac-app-nap-off",
+      "mac-high-power"
+    ],
+    "linux": [
+      "linux-governor-performance",
+      "linux-epp-performance",
+      "linux-turbo-on",
+      "linux-power-profile",
+      "linux-gamemode",
+      "linux-max-map-count",
+      "linux-split-lock-off",
+      "linux-swappiness",
+      "linux-io-nvme-none",
+      "linux-mesa-cache-size",
+      "linux-nvidia-powermizer",
+      "linux-file-limits"
+    ]
+  },
+  "extras": [
+    "shaderCache",
+    "configWrite"
+  ],
+  "launchOptions": {
+    "minecraft": "-Xms{{mcRam}} -Xmx{{mcRam}} -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20"
+  },
+  "settings": [
+    {
+      "setting": "Render distance",
+      "value": "{{mcRender}} chunks",
+      "why": "Recommended for your PC — the biggest single FPS setting."
+    },
+    {
+      "setting": "Simulation distance",
+      "value": "{{mcSim}} chunks",
+      "why": "Lower = less CPU work."
+    },
+    {
+      "setting": "Graphics",
+      "value": "Fast",
+      "why": "Fancy costs lots of FPS for leaves/clouds."
+    },
+    {
+      "setting": "Max framerate",
+      "value": "Unlimited (or your refresh rate)",
+      "why": ""
+    },
+    {
+      "setting": "VSync",
+      "value": "Off",
+      "why": "Lower input lag."
+    },
+    {
+      "setting": "Entity shadows / Clouds",
+      "value": "Off / Fast",
+      "why": "Cheap wins."
+    },
+    {
+      "setting": "Mods (Java)",
+      "value": "Sodium (Fabric) — or Sodium + Iris for shaders",
+      "why": "Sodium often doubles or triples FPS. Only use OptiFine if you need Forge + shaders."
+    }
+  ],
+  "regions": [
+    "us-east-1",
+    "us-west-2",
+    "sa-east-1",
+    "eu-west-1",
+    "eu-central-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-south-1",
+    "me-south-1"
+  ],
+  "notes": [
+    "Java Edition: paste the JVM arguments in the Launcher → Installations → Edit → More options.",
+    "Nagle off helps Java Edition because it uses TCP."
+  ]
+}
