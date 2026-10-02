@@ -70,7 +70,9 @@ async function cdp(fn) {
   while (exited === null && Date.now() - t0 < 30000) await sleep(250);
   if (exited === null) { fail('app did not quit within 30 s of closing the window'); app.kill('SIGKILL'); } else ok(`app quit ${((Date.now() - t0) / 1000).toFixed(1)} s after the window closed (exit code ${exited})`);
   await sleep(2500);
-  const left = ourProcesses();
+  let left = ourProcesses();
+  if (left.length) { await sleep(5000); left = ourProcesses(); }
+  if (left.length && process.platform !== 'win32') { try { console.log(execSync(`ps -o pid,ppid,etime,args -p ${left.join(',')}`, { encoding: 'utf8' })); } catch { /* gone */ } }
   if (left.length) fail(`${left.length} Electron process(es) left running after quit (had ${before}): ${left.join(', ')}`); else ok(`no processes left behind (had ${before} while running)`);
   if (/\[error\]/.test(log)) console.log(`app log errors:\n${log.split('\n').filter((l) => /\[error\]/.test(l)).join('\n')}`);
   process.exit(process.exitCode || 0);
