@@ -1,6 +1,6 @@
 {
   "name": "woof-tweaks",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Optimise your PC for the games you play",
   "author": "Woof Services",
   "license": "UNLICENSED",
@@ -12,7 +12,9 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "icon": "node scripts/gen-icon.js"
+    "icon": "node scripts/gen-icon.js",
+    "test": "node --test test/*.test.js",
+    "test:system": "node test/system/full-run.js"
   },
   "dependencies": {
     "electron-updater": "^6.3.9"
