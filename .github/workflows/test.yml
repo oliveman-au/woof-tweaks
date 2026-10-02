@@ -54,6 +54,8 @@ jobs:
         run: |
           ps -eo pid,ppid,user,stat,args --sort=pid > /tmp/ps-after.txt
           awk 'NR==FNR{seen[$1]=1;next} !($1 in seen)' /tmp/ps-before.txt /tmp/ps-after.txt | grep -vE " ps -eo| awk |bash -e" || echo "none"
+          # Daemons restarted by Revert / package installs (not app leftovers) — stop them so the runner's cleanup can't hang.
+          sudo systemctl stop packagekit ModemManager 2>/dev/null || true
       - uses: actions/upload-artifact@v7
         if: always()
         with:
