@@ -1,3 +1,10 @@
+# 1.1.1 - 2026-10-05
+
+- Count device installations independently of sign-in using the existing random device ID.
+- Keep the same installation across restarts, updates and account changes.
+- Retry offline check-ins without blocking app use.
+- Test release for the existing updater. Windows/Linux update in-app; macOS uses the manual download flow.
+
 # Changelog
 
 ## 1.1.0 — 4 October 2026 (launch)
