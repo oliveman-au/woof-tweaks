@@ -5,6 +5,15 @@ import { S, modal, setSetting } from './app.js';
 
 export const CHANGELOG = [
   {
+    version: '1.1.1', date: '2026-10-05', title: 'Installation counting and update test',
+    items: [
+      'Each app installation now checks in without needing to log in',
+      'Your existing random device ID stays the same across updates and account changes',
+      'Only device ID, platform and app version are reported; no hardware IDs, files or gaming activity',
+      'A small release to test the existing Windows, macOS and Linux update flow',
+    ],
+  },
+  {
     version: '1.1.0', date: '2026-10-04', title: 'The big one',
     items: [
       '160+ real tweaks for Windows, macOS, Linux and ChromeOS — each one explained (what / why / risk), backed up first and reversible',

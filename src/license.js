@@ -3,6 +3,8 @@
 // the app gets a short code, the user approves it on woof-services.stream, the app's poll gets a token.
 // The token is stored encrypted with the OS keychain (Electron safeStorage) when available.
 const https = require('https');
+const { createReporter } = require('./installations');
+let installationReporter = null;
 const { safeStorage } = require('electron');
 const { isPlan } = require('./core/plans');
 
@@ -18,6 +20,8 @@ let poll = null;
 
 function init(opts) {
   store = opts.store; deviceId = opts.deviceId; osId = opts.osId; version = opts.version; emit = opts.emit || emit;
+  installationReporter?.stop();
+  if (opts.isPackaged) { installationReporter = createReporter({ post, deviceId, osId, version }); installationReporter.start(); }
 }
 
 function post(pathname, body, timeout = 12_000) {
@@ -143,6 +147,6 @@ async function authedPost(pathname, body) {
   return r.body;
 }
 
-const stop = () => cancelLogin();
+const stop = () => { cancelLogin(); installationReporter?.stop(); };
 
 module.exports = { init, refresh, session, cachedPlan, startLogin, cancelLogin, logout, authedPost, stop, SITE };

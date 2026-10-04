@@ -192,7 +192,7 @@ function registerIPC(ipcMain, _store, winGetter) {
       send(ch, d);
     },
   });
-  license.init({ store, deviceId: getDeviceId, osId, version: app.getVersion(), emit: send });
+  license.init({ store, deviceId: getDeviceId, osId, version: app.getVersion(), emit: send, isPackaged: app.isPackaged });
   hwReady = loadHardware().catch((e) => { log.error('hardware detection failed', { e: e.message }); return {}; });
   license.refresh().then(() => { send('auth:state', { status: 'refreshed', ...license.session() }); startWatcherIfEnabled(); });
   startMaintenance();
