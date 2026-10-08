@@ -42,6 +42,19 @@ const ADV = `${HKCU}Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Adva
 const TCPIP_IF = `${HKLM}SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces`;
 
 const laptopWarn = (hw) => (hw.isLaptop ? 'You\'re on a laptop: this uses more battery and runs warmer. Best used while plugged in.' : null);
+const TPL_BALANCED = '381b4222-f694-41f0-9685-ff5bb260df2e';
+// CPUs that put games on their best cores themselves, using Windows core parking on the Balanced plan:
+//  · AMD Ryzen 9 X3D with two core dies (7900X3D, 7950X3D, 9900X3D, 9950X3D): AMD parks the non-V-Cache cores while a game runs
+//  · Intel hybrid CPUs (performance + efficiency cores: most 12th–14th gen, Core Ultra): Thread Director keeps games on P-cores
+// High performance / core parking off on these can push the game onto the slower cores — FPS drops in busy fights.
+const dualCcdX3d = (hw = {}) => /ryzen\s*9\s*\d{4}x3d/i.test(String(hw.cpu || ''));
+const intelHybrid = (hw = {}) => hw.cpuVendor === 'intel' && (/core\s*(\(tm\))?\s*ultra/i.test(String(hw.cpu || ''))
+  || (hw.cpuThreads > hw.cpuCores && hw.cpuThreads < hw.cpuCores * 2));
+const selfManagedCores = (hw = {}) => dualCcdX3d(hw) || intelHybrid(hw);
+const cpuKind = (hw) => (dualCcdX3d(hw) ? 'AMD Ryzen 9 X3D' : 'Intel hybrid (P + E core)');
+const coresWarn = (hw) => (selfManagedCores(hw)
+  ? `Your ${cpuKind(hw)} CPU uses Windows' Balanced plan to keep games on its fastest cores; this plan can push games onto slower cores. The Woof Gaming plan adapts to your CPU instead.`
+  : laptopWarn(hw));
 const hddWarn = (hw) => (hw.systemDisk === 'hdd' ? 'Your Windows drive is a hard drive (HDD). This helps on hard drives, so we recommend leaving it on.' : null);
 const win11 = (hw) => (hw.osBuild && hw.osBuild < 22000 ? 'Needs Windows 11.' : null);
 const adapters = (ctx) => (ctx.hw && ctx.hw.netAdapters) || [];
@@ -55,28 +68,36 @@ module.exports = [
     desc: 'Keeps your CPU at full speed instead of saving power.',
     long: { what: 'Creates a "High performance (Woof Tweaks)" power plan and switches to it.', why: 'The Balanced plan lowers CPU clocks between bursts, which can cause small frame-time spikes.', risk: 'Higher power use and heat. Revert switches back to your old plan and deletes ours.' },
     changes: [{ t: 'powerScheme', guid: PLAN_HIGH, template: TPL_HIGH, label: 'High performance (Woof Tweaks)', description: 'Created by Woof Tweaks' }],
-    warn: laptopWarn, recommend: (hw) => !hw.isLaptop, tags: ['fps', 'power', 'cpu'],
+    warn: coresWarn, recommend: (hw) => !hw.isLaptop && !selfManagedCores(hw), tags: ['fps', 'power', 'cpu'],
   }),
   T({
     id: 'win-plan-ultimate', name: 'Ultimate Performance power plan', category: 'fps', exclusive: 'power-plan', risk: 'moderate',
     desc: 'Windows\' hidden top-performance plan: no power-saving delays at all.',
     long: { what: 'Unlocks Microsoft\'s Ultimate Performance plan as "Ultimate Performance (Woof Tweaks)" and switches to it.', why: 'Removes the small delays Windows uses to save power, for the most consistent clocks.', risk: 'Noticeably more power and heat; not worth it on battery. Revert switches back and deletes it.' },
     changes: [{ t: 'powerScheme', guid: PLAN_ULTIMATE, template: TPL_ULTIMATE, label: 'Ultimate Performance (Woof Tweaks)', description: 'Created by Woof Tweaks' }],
-    warn: laptopWarn, recommend: (hw) => !hw.isLaptop && hw.cpuCores >= 6, tags: ['fps', 'power'],
+    warn: coresWarn, recommend: (hw) => !hw.isLaptop && hw.cpuCores >= 6 && !selfManagedCores(hw), tags: ['fps', 'power'],
   }),
   T({
     id: 'win-plan-woof', name: 'Woof Gaming power plan', category: 'fps', exclusive: 'power-plan', risk: 'moderate',
-    desc: 'High Performance tuned for games: no core parking, no USB/PCIe/disk sleep when plugged in.',
-    long: { what: 'Creates a "Woof Gaming" plan from High performance with, when plugged in: CPU minimum 100%, core parking off, USB selective suspend off, PCIe link power saving off and disks never sleep. Battery settings stay at Windows defaults.', why: 'Each of those power savers can add wake-up delay or stutter during play.', risk: 'More power and heat while plugged in. Revert switches back to your old plan and deletes it.' },
-    changes: [
-      { t: 'powerScheme', guid: PLAN_WOOF, template: TPL_HIGH, label: 'Woof Gaming', description: 'Created by Woof Tweaks for gaming' },
-      pset(SUB_PROCESSOR, PROC_MIN, 100, 'Minimum processor state', PLAN_WOOF),
-      pset(SUB_PROCESSOR, CORE_PARK_MIN, 100, 'Core parking (min cores)', PLAN_WOOF),
-      pset(SUB_USB, USB_SUSPEND, 0, 'USB selective suspend', PLAN_WOOF),
-      pset(SUB_PCIE, PCIE_ASPM, 0, 'PCIe link state power management', PLAN_WOOF),
-      pset(SUB_DISK, DISK_IDLE, 0, 'Turn off hard disk after', PLAN_WOOF),
-    ],
-    warn: laptopWarn, recommend: (hw) => !hw.isLaptop, tags: ['fps', 'power', 'stutter'],
+    desc: 'A gaming power plan that adapts to your PC: no USB/PCIe/disk sleep when plugged in.',
+    long: { what: 'Desktops: creates a "Woof Gaming" plan from High performance with, when plugged in: CPU minimum 100%, core parking off, USB selective suspend off, PCIe link power saving off and disks never sleep. Laptops and CPUs that pick their own best cores (AMD Ryzen 9 X3D, Intel 12th-gen+ hybrid): keeps Windows\' Balanced plan — so games stay on the fastest cores and the CPU doesn\'t overheat — and only turns off USB, PCIe and disk sleep when plugged in. Battery settings stay at Windows defaults.', why: 'Each of those power savers can add wake-up delay or stutter during play, without fighting how your CPU schedules games.', risk: 'Slightly more power while plugged in. Revert switches back to your old plan (and deletes the Woof plan if one was created).' },
+    changes: (ctx) => {
+      const hw = (ctx && ctx.hw) || {};
+      const noSleep = (scheme) => [
+        pset(SUB_USB, USB_SUSPEND, 0, 'USB selective suspend', scheme),
+        pset(SUB_PCIE, PCIE_ASPM, 0, 'PCIe link state power management', scheme),
+        pset(SUB_DISK, DISK_IDLE, 0, 'Turn off hard disk after', scheme),
+      ];
+      // Laptops (heat → throttling in heavy fights) and self-managing CPUs: stay on Windows' own Balanced plan.
+      if (hw.isLaptop || selfManagedCores(hw)) return [{ t: 'powerScheme', guid: TPL_BALANCED, label: 'Balanced (tuned by Woof Tweaks)' }, ...noSleep(TPL_BALANCED)];
+      return [
+        { t: 'powerScheme', guid: PLAN_WOOF, template: TPL_HIGH, label: 'Woof Gaming', description: 'Created by Woof Tweaks for gaming' },
+        pset(SUB_PROCESSOR, PROC_MIN, 100, 'Minimum processor state', PLAN_WOOF),
+        pset(SUB_PROCESSOR, CORE_PARK_MIN, 100, 'Core parking (min cores)', PLAN_WOOF),
+        ...noSleep(PLAN_WOOF),
+      ];
+    },
+    warn: (hw) => (selfManagedCores(hw) ? null : laptopWarn(hw)), recommend: () => true, tags: ['fps', 'power', 'stutter'],
   }),
   T({
     id: 'win-cpu-min-100', name: 'Minimum CPU state 100%', category: 'fps',
@@ -89,6 +110,8 @@ module.exports = [
     desc: 'Keeps all CPU cores awake so games don\'t wait for one to wake up.',
     long: { what: 'Sets "Processor performance core parking min cores" to 100% (plugged in) on your current plan.', why: 'Parked cores take time to wake, which can cause hitches in CPU-heavy games.', risk: 'Slightly higher idle power. Modern CPUs often manage this well already.' },
     changes: [pset(SUB_PROCESSOR, CORE_PARK_MIN, 100, 'Core parking (min cores)')], warn: laptopWarn, tags: ['fps', 'cpu', 'stutter'],
+    // AMD X3D / Intel hybrid CPUs rely on core parking to keep games on their fastest cores
+    guard: (hw) => (selfManagedCores(hw) ? `Not for your ${cpuKind(hw)} CPU — it uses core parking to keep games on its fastest cores, so turning it off lowers FPS.` : null),
   }),
   T({
     id: 'win-cpu-idle-off', name: 'Disable CPU idle states (C-states)', category: 'fps', risk: 'advanced',

@@ -1,17 +1,19 @@
 'use strict';
 // Presets: named bundles of tweaks. Built-ins are rules over tweak metadata, so they stay correct as
 // tweaks are added. They only ever include tweaks for this OS; the engine still enforces the plan.
+// Power plan: every preset uses the adaptive Woof Gaming plan (1.1.2). It keeps Windows' Balanced plan on laptops and on
+// CPUs that pick their own best cores (AMD Ryzen 9 X3D, Intel hybrid), where High performance could cause FPS drops.
 const BUILT_IN = [
   { id: 'safe', name: 'Safe', icon: 'shield', desc: 'Only zero-risk tweaks: no power-plan changes, no services, nothing that needs a restart.',
     pick: (t) => t.risk === 'safe' && !t.reboot && ['fps', 'cpu', 'privacy', 'stability', 'input', 'gpu'].includes(t.category) && !t.exclusive && !/nic|adapter/.test(t.id) },
   { id: 'balanced', name: 'Balanced', icon: 'scale', desc: 'Safe + moderate tweaks that help most PCs. A great default.',
-    pick: (t, hw) => t.risk !== 'advanced' && !t.security && t.category !== 'network' && (!t.exclusive || t.id.endsWith('plan-high')) && !(hw.isLaptop && /power|cpu-min|core-parking|pcie|usb-suspend/.test(t.id)) },
+    pick: (t, hw) => t.risk !== 'advanced' && !t.security && t.category !== 'network' && (!t.exclusive || t.id === 'win-plan-woof') && !(hw.isLaptop && /power|cpu-min|core-parking|pcie|usb-suspend/.test(t.id)) },
   { id: 'maxfps', name: 'Max FPS', icon: 'gauge', desc: 'Everything for frame rate and smoothness. Uses more power.',
-    pick: (t, hw) => t.risk !== 'advanced' && !t.security && ['fps', 'cpu', 'gpu', 'stability', 'privacy'].includes(t.category) && (!t.exclusive || t.id === (hw.isLaptop ? 'win-plan-high' : 'win-plan-woof')) },
+    pick: (t, hw) => t.risk !== 'advanced' && !t.security && ['fps', 'cpu', 'gpu', 'stability', 'privacy'].includes(t.category) && (!t.exclusive || t.id === 'win-plan-woof') },
   { id: 'competitive', name: 'Competitive esports', icon: 'target', desc: 'Max FPS plus input-lag and network/ping tuning.',
-    pick: (t, hw) => t.risk !== 'advanced' && !t.security && ['fps', 'cpu', 'gpu', 'stability', 'privacy', 'input', 'network'].includes(t.category) && (!t.exclusive || t.id === (hw.isLaptop ? 'win-plan-high' : 'win-plan-woof') || /dns-cloudflare$/.test(t.id)) },
+    pick: (t, hw) => t.risk !== 'advanced' && !t.security && ['fps', 'cpu', 'gpu', 'stability', 'privacy', 'input', 'network'].includes(t.category) && (!t.exclusive || t.id === 'win-plan-woof' || /dns-cloudflare$/.test(t.id)) },
   { id: 'streaming', name: 'Low-latency streaming', icon: 'radio', desc: 'Low latency without breaking capture: keeps Game Bar/recording and doesn\'t starve your encoder.',
-    pick: (t) => t.risk !== 'advanced' && !t.security && ['fps', 'gpu', 'stability', 'privacy', 'network', 'input'].includes(t.category) && !/game-dvr|game-bar|priority-separation|interrupt-mod|cpu-idle|awdl/.test(t.id) && (!t.exclusive || /plan-high|dns-cloudflare$/.test(t.id)) },
+    pick: (t) => t.risk !== 'advanced' && !t.security && ['fps', 'gpu', 'stability', 'privacy', 'network', 'input'].includes(t.category) && !/game-dvr|game-bar|priority-separation|interrupt-mod|cpu-idle|awdl/.test(t.id) && (!t.exclusive || t.id === 'win-plan-woof' || /dns-cloudflare$/.test(t.id)) },
   { id: 'battery', name: 'Battery-saver gaming laptop', icon: 'battery', desc: 'Smoother gaming on battery without draining it: no performance power plans.',
     pick: (t) => t.risk === 'safe' && !t.exclusive && ['cpu', 'privacy', 'stability', 'picture', 'input'].includes(t.category) && !/power|cpu-min|core-parking|usb-suspend|pcie|disk-sleep|high-power|low-power|governor|turbo|epp|amd-high|powermizer/.test(t.id) || /game-mode|game-dvr-off|transparency|visual-fx|reduce-/.test(t.id) },
 ];

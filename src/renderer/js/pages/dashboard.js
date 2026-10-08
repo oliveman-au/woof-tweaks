@@ -17,6 +17,24 @@ function score() {
   return { pct: Math.round((done / total) * 100), done, total };
 }
 
+// Since 1.1.2 the Woof Gaming plan adapts to the PC. Laptops and CPUs that pick their own best cores (AMD Ryzen 9 X3D,
+// Intel hybrid) stay on Windows' Balanced plan; an older High-performance-style plan there can cause FPS drops in busy fights.
+const PLANS = ['win-plan-woof', 'win-plan-high', 'win-plan-ultimate'];
+function selfManagedCores(hw) {
+  const cpu = String(hw.cpu || '');
+  return /ryzen\s*9\s*\d{4}x3d/i.test(cpu)
+    || (hw.cpuVendor === 'intel' && (/core\s*(\(tm\))?\s*ultra/i.test(cpu) || (hw.cpuThreads > hw.cpuCores && hw.cpuThreads < hw.cpuCores * 2)));
+}
+function planNeedsUpdate() {
+  const hw = S.hw || {};
+  if (S.info.platform !== 'win32' || !(hw.isLaptop || selfManagedCores(hw))) return null;
+  const applied = PLANS.map((id) => S.tweakMap.get(id)).filter((t) => t && t.applied);
+  const woof = S.tweakMap.get('win-plan-woof');
+  if (!applied.length || !woof || woof.blocked) return null;
+  const stale = applied.some((t) => t.id !== 'win-plan-woof') || (woof.applied && woof.status && woof.status !== 'optimised');
+  return stale ? applied.map((t) => t.id) : null;
+}
+
 function recommended() {
   return S.tweaks.filter((t) => !t.applied && t.status === 'default' && !t.blocked && (t.recommended || (t.risk === 'safe' && ['fps', 'stability', 'input'].includes(t.category))) && !t.exclusive)
     .sort((a, b) => Number(b.recommended) - Number(a.recommended) || Number(a.locked) - Number(b.locked)).slice(0, 5);
@@ -36,6 +54,7 @@ export function render() {
   return `<div class="page">
     <div class="page-head"><div><h1>${greeting()}${S.session.name ? `, ${esc(S.session.name.split(' ')[0])}` : ''}</h1><p>Here's how your ${esc(S.info.osName)} PC is doing. Everything Woof Tweaks changes is backed up and can be undone.</p></div>
       <div class="actions"><button class="btn" id="fixlag">${icon('stethoscope', 'sm')}Fix my lag</button></div></div>
+    ${planNeedsUpdate() ? `<div class="note warn" style="margin:0 0 14px">${icon('bolt', 'sm')}<div style="flex:1"><b>Update your power plan for this ${S.hw && S.hw.isLaptop ? 'laptop' : 'CPU'}.</b> Your current gaming power plan can push games onto slower cores or make the CPU throttle, which shows up as FPS drops (and higher in-game ping) in busy fights. The new Woof Gaming plan adapts to your PC.</div><button class="btn sm primary" id="plan-fix">Update plan</button></div>` : ''}
     <div class="hero">
       <div class="card score-card">
         ${ring(S.scan ? sc.pct : 0, 'Optimisation score', 'score')}
@@ -113,6 +132,13 @@ export function mount(root) {
   };
   root.querySelector('#rehw').onclick = async () => { const h = await api.hardware(true); if (h && !h.error) S.hw = h; await refreshScan(); renderApp(); toast('success', 'Re-scanned your PC'); };
   root.querySelector('#fixlag').onclick = fixMyLag;
+  const planFix = root.querySelector('#plan-fix');
+  if (planFix) planFix.onclick = async () => {
+    const ids = planNeedsUpdate();
+    if (!ids) return;
+    await revertFlow(ids, { title: 'Removing the old power plan' });
+    await applyFlow(['win-plan-woof'], { title: 'Woof Gaming power plan' });
+  };
   root.querySelectorAll('[data-apply]').forEach((b) => { b.onclick = () => applyFlow([b.dataset.apply], { title: S.tweakMap.get(b.dataset.apply).name }); });
   api.monitorStart();
   offMon = api.onMonitor((m) => {

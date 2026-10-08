@@ -5,6 +5,15 @@ import { S, modal, setSetting } from './app.js';
 
 export const CHANGELOG = [
   {
+    version: '1.1.2', date: '2026-10-09', title: 'Smoother fights on more PCs',
+    items: [
+      'Fixes FPS drops (and higher in-game ping) in busy fights on some PCs, first reported in Fortnite',
+      'The Woof Gaming power plan now adapts to your PC: laptops and CPUs that pick their own best cores (AMD Ryzen 9 X3D, Intel 12th-gen+ hybrid, Core Ultra) keep Windows’ Balanced plan',
+      'Full optimise and every preset now use the adaptive plan instead of High performance',
+      'Already have an older plan where it can hurt? Your Dashboard shows an "Update plan" button',
+    ],
+  },
+  {
     version: '1.1.1', date: '2026-10-05', title: 'Installation counting and update test',
     items: [
       'Each app installation now checks in without needing to log in',

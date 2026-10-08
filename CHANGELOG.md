@@ -1,3 +1,11 @@
+# 1.1.2 - 2026-10-09
+
+- Fix FPS drops (and higher in-game ping) in busy fights on some PCs, reported in Fortnite.
+- The Woof Gaming power plan now adapts to your PC. Laptops and CPUs that pick their own best cores (AMD Ryzen 9 X3D with two core dies, Intel 12th-gen+ hybrid and Core Ultra) keep Windows' Balanced plan, so games stay on the fastest cores and the CPU doesn't throttle; only USB, PCIe and disk sleep are turned off while plugged in. Other desktops keep the full Woof Gaming plan.
+- Full optimise and every preset now use the adaptive Woof Gaming plan instead of High performance.
+- "Turn off CPU core parking" is blocked on CPUs that rely on core parking; High/Ultimate plans are no longer recommended there.
+- If your PC already has an older gaming plan where it can hurt, the Dashboard shows an "Update plan" button.
+
 # 1.1.1 - 2026-10-05
 
 - Count device installations independently of sign-in using the existing random device ID.
