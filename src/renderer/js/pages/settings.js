@@ -14,7 +14,7 @@ const lockBadge = (f) => (feature(f).allowed ? '' : ` <span class="badge lock">$
 export function render() {
   const s = S.settings; const se = S.session; const u = (S.app && S.app.update) || {};
   const win = S.info.platform === 'win32';
-  const updText = { dev: 'Development build — updates are off', checking: 'Checking…', latest: 'You\'re up to date', available: `Version ${u.version} is available${u.manual ? ' — click Download' : ''}`, downloading: `Downloading ${u.version}… ${u.progress || 0}%`, ready: `Version ${u.version} is ready — it installs when you quit`, error: `Couldn't check: ${u.error || ''}`, idle: '' }[u.status] || '';
+  const updText = { dev: 'Development build — updates are off', checking: 'Checking…', latest: 'You\'re up to date', available: `Version ${u.version} is available${u.manual ? ' — click Download' : ''}`, downloading: `Downloading ${u.version}… ${u.progress || 0}%`, ready: `Version ${u.version} is ready — it installs by itself when you're not using the app`, error: `Couldn't check: ${u.error || ''}`, idle: '' }[u.status] || '';
   return `<div class="page">
     <div class="page-head"><div><h1>Settings</h1><p>Woof Tweaks v${esc(S.info.version)} · ${esc(S.info.osName)}</p></div></div>
     <div class="grid g2" style="align-items:start">
@@ -46,7 +46,7 @@ export function render() {
         </div>
         <div class="card set-group"><h2 style="padding-top:12px">App</h2>
           <div class="set-row"><div class="l"><b>Start with ${S.info.platform === 'darwin' ? 'macOS' : S.info.platform === 'win32' ? 'Windows' : 'your desktop'}</b><span>Needed for the Game Mode Watcher to work without opening the app.</span></div>${sw('s-start', s.launchOnStartup)}</div>
-          <div class="set-row"><div class="l"><b>Automatic updates</b><span>${esc(updText)}${S.info.platform === 'darwin' ? ' · On a Mac new versions are downloaded from the website (macOS only auto-installs paid-signed apps).' : ''}</span></div>${sw('s-auto', s.autoUpdate !== false)}<button class="btn sm" id="check">${icon('refresh', 'sm')}Check</button>${u.status === 'ready' ? `<button class="btn sm primary" id="install">Restart & update</button>` : ''}${u.status === 'available' ? `<button class="btn sm primary" id="dl-update">${icon('download', 'sm')}Download</button>` : ''}</div>
+          <div class="set-row"><div class="l"><b>Updates</b><span>${esc(updText)} · Updates install automatically in the background${S.info.platform === 'darwin' ? ' (keep Woof Tweaks in your Applications folder)' : ''}.</span></div><button class="btn sm" id="check">${icon('refresh', 'sm')}Check</button>${u.status === 'ready' ? `<button class="btn sm primary" id="install">Restart & update</button>` : ''}${u.status === 'available' ? `<button class="btn sm primary" id="dl-update">${icon('download', 'sm')}Download</button>` : ''}</div>
           <div class="set-row"><div class="l"><b>What's new</b><span>See the changes in this version.</span></div><button class="btn sm" id="news">${icon('sparkle', 'sm')}Open</button></div>
           <div class="set-row"><div class="l"><b>Logs</b><span>Helpful for support.</span></div><button class="btn sm" id="logs">${icon('folder', 'sm')}Open logs folder</button></div>
           <div class="set-row"><div class="l"><b>Reset the app</b><span>Resets settings. Keeps your backups so you can still revert.</span></div><button class="btn sm danger" id="reset">Reset</button></div>
@@ -73,7 +73,7 @@ export function mount(root) {
   on('#s-lang', 'onchange', async (e) => { await setSetting('language', e.target.value); applyTheme(); });
   const bool = (id, key, after) => on(id, 'onchange', async (e) => { const r = await setSetting(key, e.target.checked); if (!r || !r.ok) e.target.checked = !e.target.checked; else if (after) after(e.target.checked); });
   bool('#s-rp', 'autoRestorePoint'); bool('#s-watch', 'watcherEnabled', (v) => toast('success', v ? 'Game Mode Watcher on' : 'Watcher off', v ? 'Pick games on each game\'s page.' : ''));
-  bool('#s-boost', 'sessionBoost'); bool('#s-timer', 'timerResolution'); bool('#s-overlay', 'overlay'); bool('#s-start', 'launchOnStartup'); bool('#s-auto', 'autoUpdate');
+  bool('#s-boost', 'sessionBoost'); bool('#s-timer', 'timerResolution'); bool('#s-overlay', 'overlay'); bool('#s-start', 'launchOnStartup');
   const list = (id, key, test) => on(id, 'onchange', async (e) => { const v = e.target.value.split(',').map((x) => x.trim()).filter(Boolean); if (v.some((x) => !test(x))) return toast('error', 'Check that list', 'One of the entries doesn\'t look right.'); const r = await setSetting(key, v); if (r && r.ok) toast('success', 'Saved'); });
   list('#s-dns', 'customDns', (x) => /^(\d{1,3}(\.\d{1,3}){3}|[0-9a-f:]{2,39})$/i.test(x));
   list('#s-low', 'lowerPriorityApps', (x) => /^[\w .()+-]{1,80}$/.test(x));

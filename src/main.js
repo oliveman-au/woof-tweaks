@@ -79,7 +79,7 @@ if (!app.requestSingleInstanceLock()) {
     nativeTheme.themeSource = store.get('theme') === 'light' ? 'light' : 'dark';
     registerIPC(ipcMain, store, () => win);
     createWindow();
-    initUpdater(() => win, store);
+    initUpdater(() => win, store, { isBusy, gameActive: () => !!require('./core/watcher').status().active });
   });
 
   // Closing the last window quits — on macOS too (no "stay alive in the Dock with no windows").

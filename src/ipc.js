@@ -382,7 +382,7 @@ function registerIPC(ipcMain, _store, winGetter) {
     if (key === 'maintenance' && val.enabled && !can('maintenance')) return needPlan('maintenance');
     store.set(key, val);
     if (key === 'launchOnStartup') applyStartupSetting(val);
-    if (key === 'autoUpdate') updater.check(store);
+    if (key === 'autoUpdate') updater.check(store); // (kept for old settings files; updates are always automatic now)
     if (key === 'watcherEnabled' || key === 'watcherGames') startWatcherIfEnabled();
     if (key === 'overlay') toggleOverlay(val);
     return { ok: true };

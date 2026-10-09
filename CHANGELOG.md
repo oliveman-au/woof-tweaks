@@ -1,3 +1,9 @@
+# 1.1.3 - 2026-10-09
+
+- Updates now install automatically in the background, at a moment you're not using the app (never during a change or a watched game session). Woof Tweaks restarts itself and shows a short "Woof Tweaks was updated" message.
+- macOS: Woof Tweaks now updates itself too (keep it in your Applications folder). Each download is checked against its SHA-512 before it's installed.
+- After an update you get a small notification instead of a pop-up.
+
 # 1.1.2 - 2026-10-09
 
 - Fix FPS drops (and higher in-game ping) in busy fights on some PCs, reported in Fortnite.

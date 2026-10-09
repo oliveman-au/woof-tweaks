@@ -5,6 +5,14 @@ import { S, modal, setSetting } from './app.js';
 
 export const CHANGELOG = [
   {
+    version: '1.1.3', date: '2026-10-09', title: 'Updates take care of themselves',
+    items: [
+      'New versions install automatically in the background when you\'re not using the app — never during a change or a game session',
+      'You just get a small “Woof Tweaks was updated” message afterwards',
+      'Macs update themselves too now (keep Woof Tweaks in your Applications folder)',
+    ],
+  },
+  {
     version: '1.1.2', date: '2026-10-09', title: 'Smoother fights on more PCs',
     items: [
       'Fixes FPS drops (and higher in-game ping) in busy fights on some PCs, first reported in Fortnite',

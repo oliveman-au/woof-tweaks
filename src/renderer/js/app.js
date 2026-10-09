@@ -373,7 +373,7 @@ function bindGlobal() {
   api.onRegistry(async () => { await loadTweaks(); const g = await api.games(); if (Array.isArray(g)) S.games = g; await refreshScan(); render(); });
   api.onToast((tt) => toast(tt.type || 'info', tt.title, tt.message));
   api.onAuth(async (s) => { if (s.status === 'refreshed' || s.status === 'signed-out') { S.session = { ...S.session, ...s }; const st = await api.state(); S.app = st; S.session = st.session; renderShell(); render(); if (s.reason) toast('warn', 'Logged out', s.reason); } });
-  api.onUpdate((u) => { if (S.app) S.app.update = u; if (u.status === 'ready') toast('success', `Update ${u.version} is ready`, u.critical ? 'This update is required — it installs when you restart.' : 'It installs the next time you quit.', { action: { label: 'Restart now', run: () => api.installUpdate() }, ms: 20000 }); if (u.status === 'available') toast('info', `Update ${u.version} available`, u.manual ? 'Download it and replace the app in Applications — your backups are kept.' : 'Auto-update is off.', { action: { label: 'Download', run: () => api.downloadUpdate() }, ms: 20000 }); if (S.page === 'settings') render(); });
+  api.onUpdate((u) => { if (S.app) S.app.update = u; if (u.status === 'available' && u.manual) toast('info', `Woof Tweaks ${u.version} is out`, 'Move Woof Tweaks to your Applications folder so it can update itself, or download it now.', { action: { label: 'Download', run: () => api.downloadUpdate() }, ms: 20000 }); if (S.page === 'settings') render(); });
   api.onWatcher((w) => { if (w.type === 'start') toast('info', `${w.name || 'Game'} started`, 'Game Mode Watcher applied its profile.'); if (w.type === 'stop') toast('info', 'Game closed', 'Watcher reverted what it applied.'); });
   api.onFinishing(() => {
     const f = document.createElement('div');
@@ -383,12 +383,12 @@ function bindGlobal() {
   });
 }
 
-// Critical update gate: a release marked [critical] must be installed before continuing.
+// Updates install themselves in the background (see src/updater.js). Only a Mac app that can't replace itself
+// (not in Applications / still in Downloads) asks the user to download a [critical] release.
 function criticalGate() {
   const u = S.app && S.app.update;
-  if (!u || !u.critical || !['downloading', 'ready', 'available'].includes(u.status)) return;
-  if (u.manual) { modal({ title: 'Important update required', icon: 'download', dismissable: false, body: `<p>Version ${esc(u.version)} fixes a critical problem. Download it and replace Woof Tweaks in your Applications folder — your backups are kept.</p>`, actions: [{ label: 'Download update', kind: 'primary', run: () => { api.downloadUpdate(); return false; } }] }); return; }
-  modal({ title: 'Important update required', icon: 'download', dismissable: false, body: `<p>Version ${esc(u.version)} fixes a critical problem. It ${u.status === 'ready' ? 'is ready to install' : 'is downloading'} — the app will restart once.</p>`, actions: [{ label: u.status === 'ready' ? 'Restart and update' : 'Downloading…', kind: 'primary', disabled: u.status !== 'ready', run: () => api.installUpdate() }] });
+  if (!u || !u.critical || !u.manual || u.status !== 'available') return;
+  modal({ title: 'Important update', icon: 'download', dismissable: false, body: `<p>Version ${esc(u.version)} fixes an important problem. Download it and replace Woof Tweaks in your Applications folder — your backups are kept. Once it's in Applications, future updates install by themselves.</p>`, actions: [{ label: 'Download update', kind: 'primary', run: () => { api.downloadUpdate(); return false; } }] });
 }
 
 // ---------- boot ----------
@@ -398,5 +398,10 @@ function criticalGate() {
   await loadAll();
   criticalGate();
   if (!S.settings.onboarded) onboarding();
-  else if (S.settings.lastSeenVersion !== S.info.version) whatsNew();
+  else if (!S.settings.lastSeenVersion) whatsNew(); // first run after onboarding was skipped
+  else if (S.settings.lastSeenVersion !== S.info.version) {
+    // Updated in the background: just say so (the full list is one click away).
+    toast('success', 'Woof Tweaks was updated', `You're now on version ${S.info.version}.`, { action: { label: "What's new", run: () => whatsNew() }, ms: 12000 });
+    setSetting('lastSeenVersion', S.info.version);
+  }
 })();
