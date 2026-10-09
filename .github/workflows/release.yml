@@ -44,8 +44,44 @@ jobs:
             dist/*.blockmap
             dist/latest*.yml
 
+  # Woof Tweaks for Android ships with every release (same version number). Signed with the Woof Android key
+  # (repository secrets); the .sha256 file lets the app verify its own updates.
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: 8.11.1
+      - name: Build the signed APK
+        working-directory: android
+        env:
+          KEYSTORE_B64: ${{ secrets.WOOF_ANDROID_KEYSTORE_B64 }}
+          WOOF_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.WOOF_ANDROID_KEYSTORE_PASSWORD }}
+          WOOF_ANDROID_KEY_ALIAS: ${{ secrets.WOOF_ANDROID_KEY_ALIAS }}
+          WOOF_ANDROID_KEY_PASSWORD: ${{ secrets.WOOF_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          [ -n "$KEYSTORE_B64" ] || { echo "Missing the WOOF_ANDROID_KEYSTORE_B64 secret"; exit 1; }
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/woof-android.p12"
+          export WOOF_ANDROID_KEYSTORE="$RUNNER_TEMP/woof-android.p12"
+          gradle --no-daemon testReleaseUnitTest assembleRelease
+          rm -f "$RUNNER_TEMP/woof-android.p12"
+          v=$(node -p "require('../package.json').version")
+          mkdir -p ../dist-android
+          cp app/build/outputs/apk/release/app-release.apk "../dist-android/Woof-Tweaks-Android-$v.apk"
+          cd ../dist-android && sha256sum "Woof-Tweaks-Android-$v.apk" > "Woof-Tweaks-Android-$v.apk.sha256" && cat *.sha256
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-android
+          path: dist-android/*
+
   release:
-    needs: build
+    needs: [build, android]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || inputs.draft
     permissions:
