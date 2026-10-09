@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { spawn, execFile } = require('child_process');
+const { parseLatestYml, cmpVersion } = require('./update-feed');
 
 const IS_MAC = process.platform === 'darwin';
 const REPO = 'https://github.com/oliveman-au/woof-tweaks/releases';
@@ -30,7 +31,6 @@ let state = { status: 'idle', version: null, critical: false, progress: 0, error
 
 const send = (ch, data) => { try { const w = getWin(); if (w && !w.isDestroyed()) w.webContents.send(ch, data); } catch { /* window closing */ } };
 const setState = (patch) => { state = { ...state, ...patch }; send('update:state', state); };
-const cmpVersion = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0) ? 1 : -1; return 0; };
 
 function notesText(info) {
   const n = info && info.releaseNotes;
@@ -147,15 +147,6 @@ async function fetchOk(url, timeoutMs) {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r;
   } finally { clearTimeout(t); }
-}
-
-/** latest-mac.yml -> { version, file, sha512, size, notes } (only the fields we need; no YAML library). */
-function parseLatestYml(text) {
-  const version = (text.match(/^version:\s*['"]?([\d.]+)['"]?\s*$/m) || [])[1];
-  const files = [...text.matchAll(/-\s+url:\s*(\S+)\s*\n\s+sha512:\s*(\S+)\s*\n\s+size:\s*(\d+)/g)].map((m) => ({ url: m[1], sha512: m[2], size: Number(m[3]) }));
-  const zip = files.find((f) => /\.zip$/.test(f.url));
-  const notes = (text.match(/^releaseNotes:\s*([\s\S]*)$/m) || [])[1] || '';
-  return version && zip ? { version, ...zip, notes } : null;
 }
 
 const run = (cmd, args) => new Promise((resolve, reject) => execFile(cmd, args, { timeout: 300_000 }, (e, out) => (e ? reject(e) : resolve(String(out)))));

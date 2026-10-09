@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { parseLatestYml, cmpVersion } = require('../src/updater');
+const { parseLatestYml, cmpVersion } = require('../src/update-feed');
 
 const YML = `version: 1.1.2
 files:
