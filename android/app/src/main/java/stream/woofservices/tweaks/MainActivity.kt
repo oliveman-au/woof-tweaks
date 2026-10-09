@@ -130,7 +130,7 @@ private fun App(resumed: Int, justUpdated: Boolean) {
     }
     val say: (String) -> Unit = { msg -> scope.launch { snack.showSnackbar(msg) } }
     val key = resumed + refresh
-    val bump = { refresh++ }
+    val bump: () -> Unit = { refresh++ }
 
     MaterialTheme(colorScheme = darkColorScheme(primary = Brand, background = Bg, surface = Surface1, onPrimary = Color.White)) {
         Scaffold(
