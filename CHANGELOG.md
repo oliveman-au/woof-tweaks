@@ -1,3 +1,7 @@
+# 1.1.4 - 2026-10-09
+
+- New: Woof Tweaks for Android. Game Mode, reversible Android tweaks, installed-games list with tips, a ping test for game server regions, and automatic updates. Download it from woof-services.stream/tweaks.
+
 # 1.1.3 - 2026-10-09
 
 - Updates now install automatically in the background, at a moment you're not using the app (never during a change or a watched game session). Woof Tweaks restarts itself and shows a short "Woof Tweaks was updated" message.
