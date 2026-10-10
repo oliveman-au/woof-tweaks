@@ -5,6 +5,13 @@ import { S, modal, setSetting } from './app.js';
 
 export const CHANGELOG = [
   {
+    version: '1.1.5', date: '2026-10-10', title: 'Always up to date',
+    items: [
+      'A small hidden updater starts with your computer and installs new versions in the background, even when Woof Tweaks is closed',
+      'Android updates install in the background too',
+    ],
+  },
+  {
     version: '1.1.4', date: '2026-10-09', title: 'Woof Tweaks for Android',
     items: [
       'New Android app: Game Mode, reversible tweaks, your games with tips, and a ping test for game server regions',

@@ -1,3 +1,8 @@
+# 1.1.5 - 2026-10-10
+
+- Woof Tweaks now keeps itself up to date in the background: a small hidden updater starts with your computer (and checks every few hours) and installs new versions without opening the app. Uninstalling Woof Tweaks removes it.
+- Android: updates now install in the background too (every few hours and after your phone restarts).
+
 # 1.1.4 - 2026-10-09
 
 - New: Woof Tweaks for Android. Game Mode, reversible Android tweaks, installed-games list with tips, a ping test for game server regions, and automatic updates. Download it from woof-services.stream/tweaks.
