@@ -204,13 +204,13 @@ async function macCheck(store) {
   }
 }
 
-function macSwapAndQuit() {
+function macSwapAndQuit(relaunch = true) {
   if (!macStaged) return;
   const script = [
     'pid="$1"; old="$2"; new="$3"; work="$4"',
     'for i in $(seq 1 600); do kill -0 "$pid" 2>/dev/null || break; sleep 0.2; done',
     'mv "$old" "$work/old.app" && mv "$new" "$old" || { [ -d "$work/old.app" ] && [ ! -d "$old" ] && mv "$work/old.app" "$old"; }',
-    'open "$old"',
+    relaunch ? 'open "$old"' : ':',
     'sleep 5; rm -rf "$work"',
   ].join('\n');
   const child = spawn('/bin/sh', ['-c', script, 'woof-tweaks-update', String(process.pid), macBundle(), macStaged.app, macStaged.work], { detached: true, stdio: 'ignore' });
@@ -218,4 +218,39 @@ function macSwapAndQuit() {
   app.quit(); // the normal quit path: finishes any running change and undoes watcher changes first
 }
 
-module.exports = { initUpdater, stopUpdater, check, download, install, getState, parseLatestYml, cmpVersion };
+/**
+ * The hidden background updater (`--background-update`, started at login / every 6 h by background-task.js):
+ * no window, check, install silently, exit. A notification says "Woof Tweaks was updated" on the next run.
+ */
+async function runHeadless(store) {
+  storeRef = store;
+  getWin = () => null;
+  announceIfUpdated(store);
+  let done = false;
+  const finish = () => { if (done) return; done = true; stopUpdater(); setTimeout(() => app.exit(0), 300); };
+  setTimeout(finish, 45 * 60_000).unref?.();
+  if (!app.isPackaged) return finish();
+  const mark = () => store.set('updateRestart', { from: app.getVersion(), hidden: true, background: true, at: Date.now() });
+  if (IS_MAC) {
+    try { await macCheck(store); } catch { return finish(); }
+    stopUpdater();
+    if (state.status === 'ready' && macStaged) { mark(); done = true; return macSwapAndQuit(false); }
+    return finish();
+  }
+  try { updater = require('electron-updater').autoUpdater; } catch { return finish(); }
+  updater.autoDownload = true;
+  updater.autoInstallOnAppQuit = false;
+  updater.allowPrerelease = false;
+  updater.logger = null;
+  updater.on('update-not-available', finish);
+  updater.on('error', finish);
+  updater.on('update-downloaded', () => {
+    mark();
+    done = true;
+    try { updater.quitAndInstall(true, false); } catch { app.exit(0); } // silent install, don't open the app
+    setTimeout(() => app.exit(0), 120_000).unref?.();
+  });
+  updater.checkForUpdates().catch(finish);
+}
+
+module.exports = { initUpdater, stopUpdater, check, download, install, getState, parseLatestYml, cmpVersion, runHeadless };

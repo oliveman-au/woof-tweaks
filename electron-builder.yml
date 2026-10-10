@@ -41,6 +41,7 @@ nsis:
   allowToChangeInstallationDirectory: false
   createDesktopShortcut: true
   shortcutName: Woof Tweaks
+  include: build/installer.nsh
   artifactName: Woof-Tweaks-Setup-${version}.${ext}
 
 linux:

@@ -125,6 +125,22 @@ object Updater {
         }
     }
 
+    /** The very first self-update needs one tap (Android's rule); later ones install silently on Android 12+. */
+    fun notifyConfirm(ctx: Context, confirm: Intent) {
+        val nm = ctx.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(NotificationChannel("updates", "Updates", NotificationManager.IMPORTANCE_LOW))
+        if (Build.VERSION.SDK_INT >= 33 && ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
+        val pi = PendingIntent.getActivity(ctx, 7, confirm, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val n = android.app.Notification.Builder(ctx, "updates")
+            .setSmallIcon(R.drawable.ic_paw)
+            .setContentTitle("Woof Tweaks update ready")
+            .setContentText("Tap to install. Future updates install by themselves.")
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .build()
+        nm.notify(2, n)
+    }
+
     /** After an update: one small notification ("it was updated"), nothing to tap. */
     fun notifyUpdated(ctx: Context) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
@@ -152,7 +168,12 @@ class InstallReceiver : BroadcastReceiver() {
                 // First self-update (or older Android): show Android's own "Update this app?" screen.
                 @Suppress("DEPRECATION")
                 val confirm = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java) else intent.getParcelableExtra(Intent.EXTRA_INTENT)
-                confirm?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                confirm?.let {
+                    it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    // Background update: Android won't open a screen from the background, so ask with a notification.
+                    Updater.notifyConfirm(ctx, it)
+                    runCatching { ctx.startActivity(it) }
+                }
             }
             PackageInstaller.STATUS_SUCCESS -> Updater.status = "Updated"
             else -> Updater.status = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "Update didn't install"

@@ -86,6 +86,12 @@ jobs:
       - name: Quit test
         if: runner.os != 'Linux'
         run: node test/system/quit-test.js
+      - name: Background updater test (Linux, virtual display)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node test/system/background-test.js
+      - name: Background updater test
+        if: runner.os != 'Linux'
+        run: node test/system/background-test.js
 
   # Woof Tweaks for Android: unit tests, lint, a release build, then every tweak applied + reverted on a real
   # Android emulator (with the same one-time permissions a user grants).

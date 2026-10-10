@@ -99,6 +99,7 @@ class MainActivity : ComponentActivity() {
         val justUpdated = last != null && cmpVersion(BuildConfig.VERSION_NAME, last) > 0
         prefs.edit().putString("last-version", BuildConfig.VERSION_NAME).apply()
         val underTest = runCatching { Class.forName("androidx.test.platform.app.InstrumentationRegistry") }.isSuccess
+        if (!underTest) UpdateJobService.schedule(this) // background updates from now on, even when the app is closed
         if (!underTest) Thread {
             Net.checkIn(this)
             // Updates are automatic: download, verify, install. Android asks only the first time.

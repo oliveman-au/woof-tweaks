@@ -74,6 +74,15 @@ class TweaksDeviceTest {
         assertEquals(filter, nm.currentInterruptionFilter)
     }
 
+    @Test fun backgroundUpdateJobIsScheduledAndKeptAcrossRestarts() {
+        UpdateJobService.schedule(ctx)
+        val job = ctx.getSystemService(android.app.job.JobScheduler::class.java).getPendingJob(4201)
+        assertTrue("background update job not scheduled", job != null)
+        assertTrue(job!!.isPeriodic)
+        assertTrue("job must survive a restart", job.isPersisted)
+        assertEquals(6 * 60 * 60 * 1000L, job.intervalMillis)
+    }
+
     @Test fun appOpensWithoutCrashing() {
         ActivityScenario.launch(MainActivity::class.java).use { Thread.sleep(3000) }
     }

@@ -4,11 +4,25 @@ const path = require('path');
 const Store = require('./store');
 const exec = require('./core/exec');
 const { registerIPC, shutdown, beforeQuit, isBusy, waitIdle } = require('./ipc');
-const { initUpdater, stopUpdater } = require('./updater');
+const { initUpdater, stopUpdater, runHeadless } = require('./updater');
+const background = require('./background-task');
+
+const BACKGROUND = process.argv.includes(background.FLAG);
 
 // One copy of the app at a time: a second launch just focuses the window we already have.
 if (!app.requestSingleInstanceLock()) {
-  app.exit(0);
+  app.exit(0); // (a hidden background run exits here too when the app is already open: the app updates itself)
+} else if (BACKGROUND) {
+  // Hidden background updater: started with the device (and every 6 hours). No window, no tray; it checks for a new
+  // version, installs it silently and exits. If the user opens Woof Tweaks meanwhile, hand over to the normal app.
+  const store = new Store('woof-tweaks-config');
+  app.on('second-instance', () => { app.relaunch({ args: process.argv.slice(1).filter((a) => a !== background.FLAG) }); app.exit(0); });
+  app.on('window-all-closed', () => {});
+  app.whenReady().then(() => {
+    if (process.platform === 'darwin' && app.dock) app.dock.hide();
+    background.ensureBackgroundTask(app).catch(() => {});
+    runHeadless(store);
+  });
 } else {
   const store = new Store('woof-tweaks-config');
   let win = null;
@@ -80,6 +94,7 @@ if (!app.requestSingleInstanceLock()) {
     registerIPC(ipcMain, store, () => win);
     createWindow();
     initUpdater(() => win, store, { isBusy, gameActive: () => !!require('./core/watcher').status().active });
+    background.ensureBackgroundTask(app).catch(() => {}); // the hidden updater that keeps this device up to date
   });
 
   // Closing the last window quits — on macOS too (no "stay alive in the Dock with no windows").
