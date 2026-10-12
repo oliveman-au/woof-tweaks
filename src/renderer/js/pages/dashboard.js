@@ -52,17 +52,17 @@ export function render() {
   const refresh = hw.refreshHz ? `${hw.refreshHz} Hz${hw.maxRefreshHz && hw.maxRefreshHz > hw.refreshHz ? ` <span class="badge moderate" data-tip="Your display supports ${hw.maxRefreshHz} Hz">max ${hw.maxRefreshHz}</span>` : ''}` : '—';
   const m = S.lastMonitor || {};
   return `<div class="page">
-    <div class="page-head"><div><h1>${greeting()}${S.session.name ? `, ${esc(S.session.name.split(' ')[0])}` : ''}</h1><p>Here's how your ${esc(S.info.osName)} PC is doing. Everything Woof Tweaks changes is backed up and can be undone.</p></div>
+    <div class="page-head"><div><h1>${greeting()}${S.session.name ? `, ${esc(S.session.name.split(' ')[0])}` : ''}</h1><p>Your ${esc(S.info.osName)} setup, at a glance. Review changes before applying them.</p></div>
       <div class="actions"><button class="btn" id="fixlag">${icon('stethoscope', 'sm')}Fix my lag</button></div></div>
     ${planNeedsUpdate() ? `<div class="note warn" style="margin:0 0 14px">${icon('bolt', 'sm')}<div style="flex:1"><b>Update your power plan for this ${S.hw && S.hw.isLaptop ? 'laptop' : 'CPU'}.</b> Your current gaming power plan can push games onto slower cores or make the CPU throttle, which shows up as FPS drops (and higher in-game ping) in busy fights. The new Woof Gaming plan adapts to your PC.</div><button class="btn sm primary" id="plan-fix">Update plan</button></div>` : ''}
     <div class="hero">
       <div class="card score-card">
         ${ring(S.scan ? sc.pct : 0, 'Optimisation score', 'score')}
         <div class="col" style="gap:8px;position:relative;z-index:1">
-          <h2>Optimisation score</h2>
+          <h2>Your setup</h2>
           <p class="muted small">${S.scan ? `${sc.done} of ${sc.total} recommended settings for your plan are optimised.` : 'Checking your current settings…'}</p>
           <div class="row wrap" style="gap:8px;margin-top:4px">
-            <button class="btn primary" id="full-opt">${icon('bolt', 'sm')}Full optimise</button>
+            <button class="btn primary" id="full-opt">${icon('bolt', 'sm')}Optimise setup</button>
             <button class="btn" data-go="tweaks">${icon('sliders', 'sm')}Pick tweaks</button>
           </div>
           <p class="dim tiny">Full optimise = the Balanced preset for the ${esc(PLAN_NAME[plan()])} plan. Never includes advanced or security trade-off tweaks.</p>

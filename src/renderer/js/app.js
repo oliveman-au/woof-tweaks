@@ -105,6 +105,7 @@ function renderShell() {
     </header>
     <nav class="sidebar" aria-label="Main">${NAV.map(([label, items]) => `<div class="nav-label">${t(label)}</div>${items.map(([id, ic]) => `<button class="nav ${S.page === id ? 'active' : ''}" data-go="${id}" aria-current="${S.page === id ? 'page' : 'false'}" data-tip-pos="bottom">${icon(ic)}<span>${t(`nav.${id}`)}</span>${navCount(id)}</button>`).join('')}`).join('')}
       ${plan() === 'ultra' || plan() === 'lifetime' ? '' : `<button class="nav upgrade" data-go="upgrade">${icon('crown')}<span>${t('nav.upgrade')}</span></button>`}
+      <div class="community-nav"><button class="nav" data-action="community">${icon('external')}<span>Discord community</span></button><button class="nav" data-action="support">${icon('book')}<span>Get support</span></button></div>
     </nav>
     <main class="main" id="main" tabindex="-1"></main>
     <footer class="footer" id="footer"></footer>`;
@@ -339,6 +340,8 @@ function bindGlobal() {
     const card = a.closest('.tweak');
     const id = card && card.dataset.id;
     switch (a.dataset.action) {
+      case 'community': return api.openExternal('https://discord.gg/woof-services');
+      case 'support': return api.openExternal('https://woof-services.stream/support?service=tweaks');
       case 'login': return loginFlow();
       case 'upgrade': return upgradeModal(a.dataset.plan || 'plus');
       case 'expand': { card.classList.toggle('open'); a.setAttribute('aria-expanded', card.classList.contains('open')); return; }
