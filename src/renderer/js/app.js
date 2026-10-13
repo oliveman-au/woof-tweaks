@@ -53,6 +53,7 @@ async function loadAll() {
   S.app = st; S.session = st.session; S.settings = st.settings || {};
   applyTheme();
   renderShell();
+  render(); // Show the account gate before slow platform inventory finishes.
   const [g, a, gu, h] = await Promise.all([api.games(), api.actions(), api.guides(), api.hardware()]);
   S.games = Array.isArray(g) ? g : []; S.actions = Array.isArray(a) ? a : []; S.guides = Array.isArray(gu) ? gu : []; S.hw = h && !h.error ? h : null;
   await loadTweaks();
