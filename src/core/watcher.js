@@ -7,6 +7,7 @@ const path = require('path');
 const { run, spawnTracked, kill } = require('./exec');
 
 let timer = null;
+let pending = null;
 let opts = null;
 let active = null; // { gameId, pid?, applied: [ids], lowered: [{pid,name}], helpers: [child] }
 
@@ -89,14 +90,14 @@ async function poll() {
 function start(o) {
   opts = o;
   if (timer) return;
-  timer = setInterval(() => { poll().catch(() => {}); }, 5000);
+  timer = setInterval(() => { if (!pending) pending = poll().catch(() => {}).finally(() => { pending = null; }); }, 5000);
 }
 async function stop() {
   if (timer) { clearInterval(timer); timer = null; }
   if (active) { for (const h of active.helpers) kill(h); }
 }
 /** On quit: undo what the watcher applied so nothing is left changed behind your back. */
-async function shutdown() { await stop(); if (active) await onStop(); }
+async function shutdown() { await stop(); if (pending) await pending; if (active) await onStop(); }
 const status = () => ({ running: !!timer, active: active ? { game: active.gameId, applied: active.applied.length } : null });
 
 module.exports = { start, stop, shutdown, status, processes };

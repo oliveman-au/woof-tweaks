@@ -126,7 +126,7 @@ object Tweaks {
     fun byId(id: String) = all.firstOrNull { it.id == id }
 }
 
-class TweakEngine(private val ctx: Context) {
+class TweakEngine(private val ctx: Context, private val authenticated: () -> Boolean = { Account.authenticated() }) {
     private val prefs = ctx.getSharedPreferences("woof-tweaks", Context.MODE_PRIVATE)
     private val cr get() = ctx.contentResolver
     private val nm get() = ctx.getSystemService(NotificationManager::class.java)
@@ -167,6 +167,7 @@ class TweakEngine(private val ctx: Context) {
 
     /** Apply all-or-nothing. Returns null on success, or a message for the user. */
     fun apply(t: Tweak): String? {
+        if (!authenticated()) return "Sign in to use Woof Tweaks."
         if (!allowed(t)) return "Allow access first."
         if (isApplied(t)) return null
         val originals = t.changes.map { read(it) }
@@ -198,7 +199,7 @@ class TweakEngine(private val ctx: Context) {
             val ok = runCatching { write(c, v ?: defaultFor(c)) }.getOrDefault(false)
             if (!ok) failed = true
         }
-        prefs.edit().remove("orig:${t.id}").apply()
+        if (!failed) prefs.edit().remove("orig:${t.id}").apply()
         return if (failed) "Some values couldn't be put back." else null
     }
 
@@ -219,6 +220,7 @@ class TweakEngine(private val ctx: Context) {
 
     /** Returns how many things were switched on. */
     fun startSession(dnd: Boolean): Int {
+        if (!authenticated()) return 0
         var n = 0
         val ours = mutableListOf<String>()
         for (id in Tweaks.session) {

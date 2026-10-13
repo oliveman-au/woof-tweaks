@@ -63,8 +63,9 @@ async function loadAll() {
 export async function reloadEverything() {
   const st = await api.state();
   S.app = st; S.session = st.session; S.settings = st.settings || {};
-  const [g, a] = await Promise.all([api.games(), api.actions()]);
+  const [g, a, gu, h] = await Promise.all([api.games(), api.actions(), api.guides(), api.hardware()]);
   S.games = Array.isArray(g) ? g : S.games; S.actions = Array.isArray(a) ? a : S.actions;
+  S.guides = Array.isArray(gu) ? gu : S.guides; S.hw = h && !h.error ? h : S.hw;
   await loadTweaks();
   await refreshScan();
   renderShell(); render();
@@ -142,6 +143,10 @@ export function render() {
   const main = document.getElementById('main');
   if (!main) return;
   const p = PAGES[S.page];
+  if (!S.session.signedIn && S.page !== 'backups') {
+    main.innerHTML = `<section class="card auth-gate" style="max-width:650px;margin:8vh auto;padding:36px"><div class="eyebrow">YOUR WOOF ACCOUNT</div><h1 style="margin:12px 0">Sign in. Get set.</h1><p class="muted">Sign in to use Woof Tweaks. Your browser opens the Woof website; if you are already signed in there, just approve the matching code.</p><p class="muted small" style="margin:16px 0">After verification, you can keep using the app for up to 15 minutes without a connection. Reconnect to continue. Opening the app requires an online account check.</p><div class="row" style="flex-wrap:wrap"><button class="btn primary" data-action="login">Continue in browser</button><button class="btn ghost" data-action="reconnect">Check connection</button><button class="btn ghost" data-go="backups">Restore previous changes</button><button class="btn ghost" data-action="support">Get support</button></div></section>`;
+    return;
+  }
   main.innerHTML = p.render(S);
   if (p.mount) p.mount(main, S);
 }
@@ -313,6 +318,7 @@ export async function loginFlow() {
     onMount: async (ov, done) => {
       off = api.onAuth((s) => {
         if (s.status === 'approved') { toast('success', `Logged in${s.name ? ` as ${s.name}` : ''}`, `Your plan: ${PLAN_NAME[s.plan] || 'Good'}`); done('ok'); }
+        else if (s.status === 'error') { ov.querySelector('.modal-body').innerHTML = `<p>${esc(s.reason || 'Could not verify sign-in. Try again.')}</p>`; }
         else if (s.status === 'denied') { ov.querySelector('.modal-body').innerHTML = `<div class="note warn">${icon('alert')}<div>The login was denied on the website.</div></div>`; }
         else if (s.status === 'expired') { ov.querySelector('.modal-body').innerHTML = `<div class="note warn">${icon('alert')}<div>The code expired. Close this and click Log in again.</div></div>`; }
       });
@@ -340,9 +346,10 @@ function bindGlobal() {
     const card = a.closest('.tweak');
     const id = card && card.dataset.id;
     switch (a.dataset.action) {
-      case 'community': return api.openExternal('https://discord.gg/woof-services');
+      case 'community': return api.openExternal('https://woof-services.stream/discord');
       case 'support': return api.openExternal('https://woof-services.stream/support?service=tweaks');
       case 'login': return loginFlow();
+      case 'reconnect': await api.refreshPlan(); return reloadEverything();
       case 'upgrade': return upgradeModal(a.dataset.plan || 'plus');
       case 'expand': { card.classList.toggle('open'); a.setAttribute('aria-expanded', card.classList.contains('open')); return; }
       case 'preview-one': return previewModal([id]);
@@ -375,7 +382,15 @@ function bindGlobal() {
   api.onBusy((b) => { S.busy = !!b.busy; renderFooter(); });
   api.onRegistry(async () => { await loadTweaks(); const g = await api.games(); if (Array.isArray(g)) S.games = g; await refreshScan(); render(); });
   api.onToast((tt) => toast(tt.type || 'info', tt.title, tt.message));
-  api.onAuth(async (s) => { if (s.status === 'refreshed' || s.status === 'signed-out') { S.session = { ...S.session, ...s }; const st = await api.state(); S.app = st; S.session = st.session; renderShell(); render(); if (s.reason) toast('warn', 'Logged out', s.reason); } });
+  api.onAuth(async (s) => {
+    if (!['refreshed', 'signed-out', 'approved'].includes(s.status)) return;
+    const previous = S.session;
+    const st = await api.state(); S.app = st; S.session = st.session;
+    if (S.session.signedIn && (!previous.signedIn || previous.plan !== S.session.plan)) await reloadEverything();
+    else { renderShell(); render(); }
+    if (S.session.signedIn) welcomeOnce();
+    if (s.status === 'signed-out' && s.reason) toast('warn', 'Signed out', s.reason);
+  });
   api.onUpdate((u) => { if (S.app) S.app.update = u; if (u.status === 'available' && u.manual) toast('info', `Woof Tweaks ${u.version} is out`, 'Move Woof Tweaks to your Applications folder so it can update itself, or download it now.', { action: { label: 'Download', run: () => api.downloadUpdate() }, ms: 20000 }); if (S.page === 'settings') render(); });
   api.onWatcher((w) => { if (w.type === 'start') toast('info', `${w.name || 'Game'} started`, 'Game Mode Watcher applied its profile.'); if (w.type === 'stop') toast('info', 'Game closed', 'Watcher reverted what it applied.'); });
   api.onFinishing(() => {
@@ -394,17 +409,23 @@ function criticalGate() {
   modal({ title: 'Important update', icon: 'download', dismissable: false, body: `<p>Version ${esc(u.version)} fixes an important problem. Download it and replace Woof Tweaks in your Applications folder — your backups are kept. Once it's in Applications, future updates install by themselves.</p>`, actions: [{ label: 'Download update', kind: 'primary', run: () => { api.downloadUpdate(); return false; } }] });
 }
 
+let welcomed = false;
+function welcomeOnce() {
+  if (welcomed || !S.session.signedIn) return;
+  welcomed = true;
+  if (!S.settings.onboarded) onboarding();
+  else if (!S.settings.lastSeenVersion) whatsNew();
+  else if (S.settings.lastSeenVersion !== S.info.version) {
+    toast('success', 'Woof Tweaks was updated', `You're now on version ${S.info.version}.`, { action: { label: "What's new", run: () => whatsNew() }, ms: 12000 });
+    setSetting('lastSeenVersion', S.info.version);
+  }
+}
+
 // ---------- boot ----------
 (async function boot() {
   bindGlobal();
   document.getElementById('app').innerHTML = `<div class="finishing" style="background:var(--bg)"><div class="brand-mark" style="width:56px;height:56px;border-radius:16px;margin:0 auto">${PAW}</div><p class="muted">Loading Woof Tweaks…</p></div>`;
   await loadAll();
   criticalGate();
-  if (!S.settings.onboarded) onboarding();
-  else if (!S.settings.lastSeenVersion) whatsNew(); // first run after onboarding was skipped
-  else if (S.settings.lastSeenVersion !== S.info.version) {
-    // Updated in the background: just say so (the full list is one click away).
-    toast('success', 'Woof Tweaks was updated', `You're now on version ${S.info.version}.`, { action: { label: "What's new", run: () => whatsNew() }, ms: 12000 });
-    setSetting('lastSeenVersion', S.info.version);
-  }
+  welcomeOnce();
 })();

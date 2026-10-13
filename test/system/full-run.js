@@ -31,7 +31,7 @@ const VOLATILE = (op, a, b) => {
   const hw = await hardware.detect();
   const registry = build(hw);
   const settings = { autoRestorePoint: false, customDns: ['9.9.9.9', '149.112.112.112'] };
-  engine.init({ registry, dataDir, getPlan: () => 'ultra', getHardware: async () => hw, getSettings: () => settings });
+  engine.init({ registry, dataDir, getAuthenticated: () => true, getPlan: () => 'ultra', getHardware: async () => hw, getSettings: () => settings });
   const be = engine.backendFor();
   const ctx = { hw, settings };
   const skip = new Set((process.env.WOOF_SKIP || '').split(',').filter(Boolean));

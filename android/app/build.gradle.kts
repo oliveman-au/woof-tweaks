@@ -53,6 +53,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.crypto.tink:tink-android:1.23.0") // Official Google library; Ed25519 verification also works on Android 8+.
     val bom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(bom)
     implementation("androidx.core:core-ktx:1.15.0")

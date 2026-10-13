@@ -37,7 +37,7 @@ class TweaksDeviceTest {
     }
 
     @Test fun everyTweakAppliesAndRevertsExactly() {
-        val e = TweakEngine(ctx)
+        val e = TweakEngine(ctx) { true }
         assertTrue(e.canWriteSettings())
         assertTrue(e.hasAdvanced())
         var applied = 0
@@ -60,7 +60,7 @@ class TweaksDeviceTest {
     }
 
     @Test fun gameModeTurnsEverythingBackOff() {
-        val e = TweakEngine(ctx)
+        val e = TweakEngine(ctx) { true }
         if (e.sessionActive()) e.endSession()
         val nm = ctx.getSystemService(NotificationManager::class.java)
         val filter = nm.currentInterruptionFilter
@@ -72,6 +72,20 @@ class TweaksDeviceTest {
         val after = Tweaks.session.mapNotNull { Tweaks.byId(it) }.flatMap { t -> t.changes.map { read(it) } }
         assertEquals(before, after)
         assertEquals(filter, nm.currentInterruptionFilter)
+    }
+
+    @Test fun signedOutCannotApplyButCanRestore() {
+        val allowed = TweakEngine(ctx) { true }
+        val locked = TweakEngine(ctx) { false }
+        val tweak = Tweaks.byId("screen-awake")!!
+        if (allowed.isApplied(tweak)) allowed.revert(tweak)
+        val before = tweak.changes.map { read(it) }
+        assertTrue(locked.apply(tweak)!!.contains("Sign in"))
+        assertEquals(0, locked.startSession(true))
+        assertEquals(before, tweak.changes.map { read(it) })
+        assertNull(allowed.apply(tweak))
+        assertNull(locked.revert(tweak))
+        assertEquals(before, tweak.changes.map { read(it) })
     }
 
     @Test fun backgroundUpdateJobIsScheduledAndKeptAcrossRestarts() {

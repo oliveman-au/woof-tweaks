@@ -9,7 +9,10 @@ const { safeStorage } = require('electron');
 const { isPlan } = require('./core/plans');
 
 const SITE = process.env.WOOF_SITE || 'https://woof-services.stream';
-const OFFLINE_GRACE_MS = 7 * 24 * 3600_000;
+const lease = require('./session-lease').createVerifier();
+let refreshTimer = null, expiryTimer = null, lastState = '';
+const authenticated = () => !!getToken() && !!lease.claims();
+function publishState() { const s = session(), key = JSON.stringify([s.signedIn, s.name, s.plan]); if (key !== lastState) { lastState = key; emit('auth:state', { status: 'refreshed', ...s }); } }
 
 let store = null;
 let deviceId = () => 'unknown';
@@ -17,10 +20,14 @@ let osId = () => process.platform;
 let version = '0.0.0';
 let emit = () => {};
 let poll = null;
+let loginGeneration = 0;
 
 function init(opts) {
   store = opts.store; deviceId = opts.deviceId; osId = opts.osId; version = opts.version; emit = opts.emit || emit;
   installationReporter?.stop();
+  if (refreshTimer) clearInterval(refreshTimer); if (expiryTimer) clearInterval(expiryTimer); lease.clear();
+  refreshTimer = setInterval(() => refresh().catch(() => {}), 60000); refreshTimer.unref();
+  expiryTimer = setInterval(publishState, 1000); expiryTimer.unref();
   if (opts.isPackaged) { installationReporter = createReporter({ post, deviceId, osId, version }); installationReporter.start(); }
 }
 
@@ -42,6 +49,7 @@ function post(pathname, body, timeout = 12_000) {
 
 // ---------- token storage ----------
 function saveToken(token, name) {
+  lease.clear();
   let rec;
   if (safeStorage && safeStorage.isEncryptionAvailable()) rec = { enc: safeStorage.encryptString(token).toString('base64'), name };
   else rec = { raw: token, name };
@@ -58,11 +66,8 @@ function getToken() {
 
 // ---------- plan ----------
 function cachedPlan() {
-  const p = store.get('plan', 'free');
-  const at = store.get('planCheckedAt', 0);
-  if (!isPlan(p) || !getToken()) return 'free';
-  if (Date.now() - at > OFFLINE_GRACE_MS) return 'free';
-  return p;
+  const c = authenticated() && lease.claims();
+  return c && isPlan(c.plan) ? c.plan : 'free';
 }
 
 let checking = null;
@@ -73,25 +78,29 @@ async function refresh() {
     if (!token) { store.set('plan', 'free'); return session(); }
     try {
       const r = await post('/api/app/license', { token, deviceId: deviceId(), platform: osId(), appVersion: version });
+      if (token !== getToken()) return session();
       const b = r.body || {};
+      if (r.status !== 200) throw new Error(`Account check failed (${r.status})`);
       if (b.signedIn === false) { clearSession(); emit('auth:state', { status: 'signed-out', reason: 'Your login expired. Please log in again.' }); return session(); }
+      if (b.signedIn !== true || !lease.accept(b.authLease, 'tweaks', deviceId())) throw new Error('Could not verify this account. Connect to the internet and try again.');
       if (isPlan(b.plan)) { store.set('plan', b.plan); store.set('planCheckedAt', Date.now()); }
       if (b.name) { const s = store.get('session'); if (s) store.set('session', { ...s, name: b.name }); }
       store.set('lastOnlineAt', Date.now());
       return session();
     } catch (e) {
       return { ...session(), offline: true, error: e.message };
-    } finally { checking = null; }
+    }
   })();
-  return checking;
+  try { return await checking; } finally { checking = null; publishState(); }
 }
 
 function session() {
   const s = store.get('session');
-  return { signedIn: !!(s && getToken()), name: (s && s.name) || null, plan: cachedPlan(), checkedAt: store.get('planCheckedAt', 0) || null };
+  return { signedIn: authenticated(), hasAccount: !!getToken(), offlineRemainingMs: lease.remaining(), name: (s && s.name) || null, plan: cachedPlan(), checkedAt: store.get('planCheckedAt', 0) || null };
 }
 
 function clearSession() {
+  lease.clear();
   store.delete('session');
   store.set('plan', 'free');
   store.delete('planCheckedAt');
@@ -100,7 +109,9 @@ function clearSession() {
 // ---------- device-link login ----------
 async function startLogin(openUrl) {
   cancelLogin();
+  const generation = loginGeneration;
   const r = await post('/api/app/link/start', { deviceId: deviceId(), platform: osId(), appVersion: version });
+  if (generation !== loginGeneration) throw new Error('Sign-in cancelled.');
   const b = r.body || {};
   if (!b.ok) throw new Error(b.error || 'Could not start login');
   const until = Date.now() + (b.expiresIn || 600) * 1000;
@@ -109,26 +120,30 @@ async function startLogin(openUrl) {
   emit('auth:state', { status: 'pending', ...state });
   openUrl(b.url);
   const tick = async () => {
-    if (!poll) return;
+    if (!poll || generation !== loginGeneration) return;
     if (Date.now() > until) { poll = null; emit('auth:state', { status: 'expired' }); return; }
     try {
       const p = (await post('/api/app/link/poll', { pollToken: b.pollToken })).body || {};
+      if (generation !== loginGeneration) { if (p.token) await post('/api/app/logout', { token: p.token }).catch(() => {}); return; }
       if (p.status === 'approved' && p.token) {
         poll = null;
         saveToken(p.token, p.name || null);
         if (isPlan(p.plan)) { store.set('plan', p.plan); store.set('planCheckedAt', Date.now()); }
-        emit('auth:state', { status: 'approved', ...session() });
+        await refresh();
+        if (generation === loginGeneration && !authenticated()) await refresh();
+        if (generation !== loginGeneration) { if (getToken() === p.token) clearSession(); await post('/api/app/logout', { token: p.token }).catch(() => {}); return; }
+        emit('auth:state', { status: authenticated() ? 'approved' : 'error', ...(!authenticated() ? { reason: 'Sign-in could not be verified. Check your connection and try again.' } : {}), ...session() });
         return;
       }
       if (p.status === 'denied' || p.status === 'expired') { poll = null; emit('auth:state', { status: p.status }); return; }
     } catch { /* network blip: keep polling */ }
-    if (poll) poll = setTimeout(tick, interval);
+    if (poll && generation === loginGeneration) poll = setTimeout(tick, interval);
   };
   poll = setTimeout(tick, interval);
   return state;
 }
 
-function cancelLogin() { if (poll) { clearTimeout(poll); poll = null; } }
+function cancelLogin() { loginGeneration++; if (poll) { clearTimeout(poll); poll = null; } }
 
 async function logout() {
   cancelLogin();
@@ -141,12 +156,12 @@ async function logout() {
 /** For other app→site calls (feedback, cloud sync). */
 async function authedPost(pathname, body) {
   const token = getToken();
-  if (!token) throw new Error('Log in first');
+  if (!token || !authenticated()) throw new Error('Sign in online first');
   const r = await post(pathname, { ...body, token, deviceId: deviceId() });
   if (r.status === 401) { clearSession(); throw new Error('Your login expired. Please log in again.'); }
   return r.body;
 }
 
-const stop = () => { cancelLogin(); installationReporter?.stop(); };
+const stop = () => { cancelLogin(); installationReporter?.stop(); clearInterval(refreshTimer); clearInterval(expiryTimer); lease.clear(); };
 
-module.exports = { init, refresh, session, cachedPlan, startLogin, cancelLogin, logout, authedPost, stop, SITE };
+module.exports = { authenticated, init, refresh, session, cachedPlan, startLogin, cancelLogin, logout, authedPost, stop, SITE };

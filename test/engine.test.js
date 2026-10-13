@@ -42,7 +42,7 @@ function fakeBackend(system, opts = {}) {
 }
 
 const T = (id, tier, changes, extra = {}) => ({ id, name: id, tier, os: ['test'], category: 'fps', risk: 'safe', reboot: false, changes, ...extra });
-function freshEngine({ plan = 'ultra', system = new Map(), backendOpts = {}, tweaks } = {}) {
+function freshEngine({ authenticated = () => true, plan = 'ultra', system = new Map(), backendOpts = {}, tweaks } = {}) {
   for (const k of Object.keys(require.cache)) if (k.includes(`${path.sep}src${path.sep}core${path.sep}`)) delete require.cache[k];
   const engine = require('../src/core/engine');
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'woof-test-'));
@@ -62,7 +62,7 @@ function freshEngine({ plan = 'ultra', system = new Map(), backendOpts = {}, twe
   const registry = { osId: 'test', osName: 'Test OS', tweaks: new Map(list.map((t) => [t.id, t])), actions: new Map() };
   const backend = fakeBackend(system, backendOpts);
   let currentPlan = plan;
-  engine.init({ registry, dataDir, backend, getPlan: () => currentPlan, getHardware: async () => ({}), getSettings: () => ({}) });
+  engine.init({ registry, dataDir, backend, getAuthenticated: authenticated, getPlan: () => currentPlan, getHardware: async () => ({}), getSettings: () => ({}) });
   return { engine, system, backend, dataDir, setPlan: (p) => { currentPlan = p; } };
 }
 
@@ -185,7 +185,7 @@ test('a crash mid-apply is recovered on next start so the change can still be re
   const engine = require('../src/core/engine');
   const system = new Map([['reg:A', 1]]);
   const registry = { osId: 'test', osName: 'Test', tweaks: new Map([['a', T('a', 'free', [{ target: 'reg:A', value: 1 }])]]), actions: new Map() };
-  engine.init({ registry, dataDir, backend: fakeBackend(system), getPlan: () => 'free' });
+  engine.init({ registry, dataDir, backend: fakeBackend(system), getAuthenticated: () => true, getPlan: () => 'free' });
   const b2 = require('../src/core/backup');
   assert.ok(b2.isApplied('a'), 'interrupted change is listed');
   assert.strictEqual(b2.journal(), null);
@@ -199,4 +199,17 @@ test('the engine refuses a second operation while one is running', async () => {
   await assert.rejects(engine.apply(['base']), /Busy/);
   await p;
   assert.strictEqual(engine.isBusy(), false);
+});
+
+test('account proof is required for changes, while recovery stays available after sign-out', async () => {
+  let signedIn = false;
+  const { engine, system } = freshEngine({ authenticated: () => signedIn });
+  await assert.rejects(engine.apply(['a']), { code: 'AUTH' });
+  assert.strictEqual(system.has('reg:A'), false);
+  signedIn = true;
+  assert.strictEqual((await engine.apply(['a'])).applied, 1);
+  signedIn = false;
+  await assert.rejects(engine.apply(['b']), { code: 'AUTH' });
+  assert.strictEqual((await engine.revert(['a'])).applied, 1);
+  assert.strictEqual(system.has('reg:A'), false);
 });

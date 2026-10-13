@@ -1,5 +1,12 @@
 # 1.1.5 - 2026-10-10
 
+## 1.1.7 — 2026-10-14
+
+- Require verified browser sign-in before app features can run.
+- Allow up to 15 minutes offline after verification, using signed device-bound account proofs and a monotonic expiry timer. App startup verifies online again.
+- Keep recovery, sign-in and update paths available when the session is locked.
+- Use the maintained Woof community link.
+
 - Woof Tweaks now keeps itself up to date in the background: a small hidden updater starts with your computer (and checks every few hours) and installs new versions without opening the app. Uninstalling Woof Tweaks removes it.
 - Android: updates now install in the background too (every few hours and after your phone restarts).
 

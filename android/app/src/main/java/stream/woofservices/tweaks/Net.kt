@@ -66,6 +66,22 @@ object Net {
         }
     }
 
+    fun post(path: String, body: JSONObject): JSONObject {
+        require(path.startsWith("/api/app/"))
+        val c = URL(SITE + path).openConnection() as HttpURLConnection
+        c.requestMethod = "POST"; c.doOutput = true; c.instanceFollowRedirects = false
+        c.connectTimeout = 8000; c.readTimeout = 8000
+        c.setRequestProperty("Content-Type", "application/json")
+        c.setRequestProperty("User-Agent", "WoofTweaksAndroid/${BuildConfig.VERSION_NAME}")
+        try {
+            c.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+            check(c.responseCode in 200..299) { "Account service unavailable" }
+            val text = c.inputStream.bufferedReader().use { it.readText() }
+            check(text.length <= 100000)
+            return JSONObject(text)
+        } finally { c.disconnect() }
+    }
+
     fun getText(url: String, timeout: Int = 15000): String {
         val c = URL(url).openConnection() as HttpURLConnection
         c.connectTimeout = timeout

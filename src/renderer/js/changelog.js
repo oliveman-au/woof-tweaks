@@ -5,6 +5,15 @@ import { S, modal, setSetting } from './app.js';
 
 export const CHANGELOG = [
   {
+    version: '1.1.7', date: '2026-10-14', title: 'Your Woof account, connected',
+    items: [
+      'Sign in through your browser to use Woof Tweaks on desktop and Android; an existing website login needs only the matching-code approval',
+      'A verified session allows up to 15 minutes offline; opening the app requires an online check',
+      'Signed account proofs protect your session and plan; recovery and updates remain available after sign-out',
+      'Community links now follow the maintained Woof Discord invite',
+    ],
+  },
+  {
     version: '1.1.5', date: '2026-10-10', title: 'Always up to date',
     items: [
       'A small hidden updater starts with your computer and installs new versions in the background, even when Woof Tweaks is closed',

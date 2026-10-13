@@ -74,6 +74,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -121,6 +122,22 @@ private fun App(resumed: Int, justUpdated: Boolean) {
     val ctx = LocalContext.current
     val engine = remember { TweakEngine(ctx) }
     var tab by remember { mutableStateOf(Tab.HOME) }
+    var authenticated by remember { mutableStateOf(Account.authenticated()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            withContext(Dispatchers.IO) { Account.refresh(ctx) }
+            authenticated = Account.authenticated()
+            delay(60000)
+        }
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val allowed = Account.authenticated()
+            if (!allowed && engine.sessionActive()) engine.endSession()
+            authenticated = allowed
+            delay(1000)
+        }
+    }
     var refresh by remember { mutableIntStateOf(0) }
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -151,7 +168,8 @@ private fun App(resumed: Int, justUpdated: Boolean) {
             },
         ) { pad ->
             Box(Modifier.padding(pad).fillMaxSize().background(Bg)) {
-                when (tab) {
+                if (!authenticated && tab != Tab.GUIDE) AccountGate(engine) { authenticated = Account.authenticated(); refresh++ }
+                else when (tab) {
                     Tab.HOME -> HomeScreen(engine, key, say, bump) { tab = it }
                     Tab.TWEAKS -> TweaksScreen(engine, key, say, bump)
                     Tab.GAMES -> GamesScreen(engine, say, bump)
@@ -423,10 +441,17 @@ private fun PingScreen() {
 
 @Composable
 private fun GuideScreen(engine: TweakEngine, key: Int) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
     val clip = LocalClipboardManager.current
     @Suppress("UNUSED_VARIABLE") val k = key
     LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
         item { Header("Guide", "Version ${BuildConfig.VERSION_NAME} · updates install automatically") }
+        item {
+            Section("Your Woof account", if (Account.authenticated()) "Signed in as ${Account.name ?: "your Woof account"}. Up to 15 minutes offline after verification." else "Sign in on the Home tab to use Woof Tweaks.") {
+                if (Account.authenticated()) OutlinedButton(onClick = { scope.launch { engine.endSession(); withContext(Dispatchers.IO) { Account.signOut(ctx) } } }) { Text("Sign out") }
+            }
+        }
         item {
             Section("Unlock advanced tweaks", if (engine.hasAdvanced()) "Unlocked. Advanced tweaks are ready on the Tweaks tab." else "Android only lets an app change these settings after a one-time step from a computer. It's free and takes two minutes.") {
                 if (!engine.hasAdvanced()) {
@@ -454,7 +479,7 @@ private fun GuideScreen(engine: TweakEngine, key: Int) {
             }
         }
         item {
-            Section("Safe by design", "Woof Tweaks only changes Android settings you could change yourself. Every original value is saved first; Revert puts it back exactly. No root needed, no data collected (only an anonymous install count).") {}
+            Section("Safe by design", "Woof Tweaks only changes Android settings you could change yourself. Every original value is saved first; Revert puts it back exactly. No root needed. Account checks send your sign-in token, random installation ID, Android platform and app version; never your games, files or tweak settings.") {}
         }
     }
 }

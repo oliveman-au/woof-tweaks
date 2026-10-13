@@ -50,13 +50,20 @@ async function cdp(fn) {
     await send('Runtime.enable'); await send('Log.enable'); await send('Page.enable');
     await send('Page.reload', { ignoreCache: true });
     await sleep(9000);
-    const r = await send('Runtime.evaluate', { expression: "({ title: document.title, nav: document.querySelectorAll('.nav').length, h1: (document.querySelector('.onb h1, .page h1') || {}).textContent || '', os: window.woof && window.woof.info.osName })", returnByValue: true });
+    const r = await send('Runtime.evaluate', { expression: "({ title: document.title, nav: document.querySelectorAll('.nav').length, h1: (document.querySelector('.auth-gate h1, .onb h1, .page h1') || {}).textContent || '', os: window.woof && window.woof.info.osName })", returnByValue: true });
     const errors = events.filter((e) => e.method === 'Runtime.exceptionThrown' || (e.method === 'Runtime.consoleAPICalled' && e.params.type === 'error') || (e.method === 'Log.entryAdded' && e.params.entry.level === 'error'))
       .map((e) => JSON.stringify(e.params).slice(0, 300));
     return { info: r.result && r.result.result ? r.result.result.value : null, errors };
   }).catch((e) => ({ info: null, errors: [String(e)] }));
   if (loaded.info && loaded.info.nav >= 10 && loaded.info.title === 'Woof Tweaks') ok(`UI loaded on ${loaded.info.os}: "${loaded.info.h1}" with ${loaded.info.nav} nav items`); else fail(`UI did not load: ${JSON.stringify(loaded.info)}`);
   if (loaded.errors.length) fail(`console errors:\n  ${loaded.errors.join('\n  ')}`); else ok('no console errors or exceptions');
+
+  if (loaded.info && loaded.info.h1 === 'Sign in. Get set.') ok('signed-out app shows the required account gate'); else fail('signed-out app did not show the account gate');
+  const denied = await cdp(async send => {
+    const r = await send('Runtime.evaluate', { expression: 'window.woof.preview([]).then(r => r.code)', awaitPromise: true, returnByValue: true });
+    return r.result && r.result.result && r.result.result.value;
+  });
+  if (denied === 'auth') ok('main-process IPC rejects app features without a verified account'); else fail(`unsigned IPC access was not denied: ${denied}`);
 
   // 2) Single instance: a second launch exits on its own and the first keeps running.
   const second = spawn(electron, [ROOT, '--no-sandbox'], { env, stdio: 'ignore' });

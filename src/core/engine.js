@@ -12,6 +12,8 @@ const { canUse, PLAN_NAMES } = require('./plans');
 const IS_WIN = process.platform === 'win32';
 let registry = null;      // { tweaks: Map, actions: Map }
 let getPlan = () => 'free';
+let getAuthenticated = () => false; // Fail closed until the caller supplies an account verifier.
+function requireAccount() { if (!getAuthenticated()) { const e = new Error('Sign in to use Woof Tweaks.'); e.code = 'AUTH'; throw e; } }
 let getHardware = async () => ({});
 let getSettings = () => ({});
 let emit = () => {};
@@ -109,6 +111,7 @@ function posixDescribe(op, snap) {
 function init(opts) {
   registry = opts.registry;
   getPlan = opts.getPlan || getPlan;
+  getAuthenticated = opts.getAuthenticated || (() => false);
   getHardware = opts.getHardware || getHardware;
   getSettings = opts.getSettings || getSettings;
   emit = opts.emit || emit;
@@ -234,8 +237,10 @@ async function preview(ids) {
 
 // ---------- apply ----------
 async function apply(ids, opts = {}) {
+  requireAccount();
   return withLock('apply', async () => {
     const ctx = await context();
+    requireAccount();
     const plan = getPlan();
     const results = [];
     const todo = [];
@@ -394,6 +399,7 @@ async function createRestorePoint() {
 }
 
 async function runAction(id, params = {}) {
+  requireAccount();
   const a = registry.actions.get(id);
   if (!a) return { ok: false, error: 'Unknown action' };
   const ctx = await context();
@@ -401,6 +407,7 @@ async function runAction(id, params = {}) {
   if (!a.os.includes(registry.osId)) return { ok: false, error: `Not available on ${registry.osName}` };
   if (!canUse(plan, a.tier)) return { ok: false, code: 'plan', requiredPlan: a.tier, error: `Needs the ${PLAN_NAMES[a.tier]} plan` };
   return withLock(`action:${id}`, async () => {
+    requireAccount();
     emit('engine:progress', { op: 'action', msg: a.progress || `${a.name}…`, pct: 30 });
     let res;
     try {
