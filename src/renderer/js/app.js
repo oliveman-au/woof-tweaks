@@ -304,7 +304,7 @@ export async function upgradeModal(required = 'plus', reason = '') {
   const rank = (p) => ['free', 'plus', 'pro', 'ultra', 'lifetime'].indexOf(p);
   const body = `${reason ? `<div class="note info" style="margin-bottom:14px">${icon('lock')}<div>${esc(reason)}</div></div>` : ''}
     <div class="grid g3">${plans.filter((p) => rank(p.id) >= rank(required)).slice(0, 3).map((p) => `<div class="card pad plan ${p.id === 'pro' ? 'featured' : ''}"><h3>${esc(p.name)}</h3><div class="price">${esc(p.price)}</div><ul>${p.features.map((f) => `<li>${icon('check')}${esc(f)}</li>`).join('')}</ul></div>`).join('')}</div>
-    <p class="muted small" style="margin-top:14px">Buying is done on the Woof Services website (it opens a ticket — PayPal, Cash App, crypto, bank transfer or gift card). Your plan unlocks in the app as soon as it's granted — just stay logged in.</p>`;
+    <p class="muted small" style="margin-top:14px">Pay securely through Stripe Checkout on the Woof Services website. Your plan unlocks after verified payment. Manage or cancel subscriptions in Billing on the website.</p>`;
   const v = await modal({ title: `Unlock with ${PLAN_NAME[required]}`, icon: 'crown', wide: true, body, actions: [{ label: 'Compare all plans', kind: 'ghost', value: 'compare' }, { label: 'Get it on the website', kind: 'primary', icon: 'external', value: 'buy' }] });
   if (v === 'buy') api.openExternal(`${(S.app && S.app.site) || 'https://woof-services.stream'}/tweaks#plans`);
   if (v === 'compare') go('upgrade');

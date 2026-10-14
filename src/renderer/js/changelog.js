@@ -4,6 +4,7 @@ import { esc } from './util.js';
 import { S, modal, setSetting } from './app.js';
 
 export const CHANGELOG = [
+  {version: '1.1.8', date: '2026-10-15', title: 'Secure Stripe checkout', items: ['All upgrades use Stripe Checkout on the website', 'Verified payments activate your plan; manage subscriptions from Billing']},
   {
     version: '1.1.7', date: '2026-10-14', title: 'Your Woof account, connected',
     items: [

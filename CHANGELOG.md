@@ -1,3 +1,8 @@
+## 1.1.8 - 2026-10-15
+
+- Paid upgrades use secure Stripe Checkout only.
+- Manage subscriptions from Billing on the website.
+
 # 1.1.5 - 2026-10-10
 
 ## 1.1.7 — 2026-10-14
