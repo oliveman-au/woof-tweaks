@@ -25,7 +25,7 @@ fun AccountGate(engine: TweakEngine, changed: () -> Unit) {
     val scope = rememberCoroutineScope()
     var attempt by remember { mutableStateOf<Account.Login?>(null) }
     var busy by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf(Account.error ?: "Sign in to use Woof Tweaks.") }
+    var message by remember { mutableStateOf(Account.error ?: "Sign in and unlock a lifetime plan from $5 USD once to use Woof Tweaks.") }
     LaunchedEffect(attempt) {
         val login = attempt ?: return@LaunchedEffect
         val loginContext = kotlin.coroutines.coroutineContext
@@ -38,6 +38,7 @@ fun AccountGate(engine: TweakEngine, changed: () -> Unit) {
         message = "The code expired. Please try again."; attempt = null
     }
     LazyColumn(contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        item { TextButton(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Net.SITE + "/tweaks#plans"))) }) { Text("Lifetime plans: Good $5 · Plus $10 · Pro $15 · Ultra $30 · Max $100 USD") } }
         item { Text("YOUR WOOF ACCOUNT", color = Color(0xFFC2EF83), fontSize = 12.sp) }
         item { Text("Sign in. Get set.", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 32.sp) }
         item { Text("Your browser opens the Woof website. If you're already signed in there, approve the matching code to connect this phone.", color = Color(0xFFA7A9BE)) }

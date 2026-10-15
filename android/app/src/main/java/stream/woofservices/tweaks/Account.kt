@@ -24,8 +24,13 @@ object Account {
     @Volatile var error: String? = null
         private set
 
+    @Volatile private var signedPlan = "free"
+    fun plan(): String = if (authenticated()) signedPlan else "free"
+    fun entitled(): Boolean = authenticated() && plan() in listOf("good", "plus", "pro", "ultra", "lifetime")
+    fun requiredPlan(id: String): String = PlanAccess.requiredPlan(id)
+    fun canUse(id: String): Boolean = entitled() && PlanAccess.canUse(plan(), id)
     fun authenticated(): Boolean = deadline > SystemClock.elapsedRealtime() && expiresAt > System.currentTimeMillis()
-    private fun clearLease() { deadline = 0L; expiresAt = 0L }
+    private fun clearLease() { deadline = 0L; expiresAt = 0L; signedPlan = "free" }
 
     private fun key(): SecretKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -57,6 +62,9 @@ object Account {
         val issued = c.getLong("iat"); val exp = c.getLong("exp")
         require(c.getString("typ") == "woof-session-v1" && c.getString("app") == "tweaks" && c.getString("device") == Net.deviceId(ctx))
         require(c.getLong("sub") > 0 && exp - issued == 900L && issued <= now + 30 && exp > now)
+        val verifiedPlan = c.getString("plan")
+        require(verifiedPlan in listOf("free", "good", "plus", "pro", "ultra", "lifetime"))
+        signedPlan = verifiedPlan
         expiresAt = exp * 1000
         deadline = SystemClock.elapsedRealtime() + minOf(900000L, (exp - now) * 1000)
         true

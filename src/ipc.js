@@ -33,7 +33,7 @@ let hwReady = null;
 
 const send = (ch, data) => { try { const w = getWin(); if (w && !w.isDestroyed()) w.webContents.send(ch, data); } catch { /* closing */ } if (overlayWin && !overlayWin.isDestroyed() && ch === 'monitor:tick') overlayWin.webContents.send(ch, data); };
 const plan = () => license.cachedPlan();
-const can = (feature) => license.authenticated() && canUse(plan(), tiers.featureTier(feature));
+const can = (feature) => license.entitled() && canUse(plan(), tiers.featureTier(feature));
 const needPlan = (feature) => ({ ok: false, code: 'plan', requiredPlan: tiers.featureTier(feature), error: `Needs the ${PLAN_NAMES[tiers.featureTier(feature)]} plan` });
 
 // ---------- settings (whitelist + validation) ----------
@@ -185,14 +185,14 @@ function registerIPC(ipcMain, _store, winGetter) {
 
   build({});
   engine.init({
-    registry, dataDir, getPlan: plan, getAuthenticated: license.authenticated, getHardware: () => (hwReady || Promise.resolve(hwCache)), getSettings: engineSettings,
+    registry, dataDir, getPlan: plan, getAuthenticated: license.entitled, getHardware: () => (hwReady || Promise.resolve(hwCache)), getSettings: engineSettings,
     emit: (ch, d) => {
       if (ch === 'settings:set' && d && d.key === 'lastRestorePointAt') { store.set('lastRestorePointAt', d.value); return; }
       if (ch === 'engine:log') log[d.level === 'error' ? 'error' : 'info'](d.msg);
       send(ch, d);
     },
   });
-  license.init({ store, deviceId: getDeviceId, osId, version: app.getVersion(), emit: (ch, data) => { send(ch, data); if (ch === 'auth:state' && data.status !== 'pending') { startWatcherIfEnabled(); if (!license.authenticated()) { toggleOverlay(false); monitor.stop(); } } }, isPackaged: app.isPackaged });
+  license.init({ store, deviceId: getDeviceId, osId, version: app.getVersion(), emit: (ch, data) => { send(ch, data); if (ch === 'auth:state' && data.status !== 'pending') { startWatcherIfEnabled(); if (!license.entitled()) { toggleOverlay(false); monitor.stop(); } } }, isPackaged: app.isPackaged });
   hwReady = loadHardware().catch((e) => { log.error('hardware detection failed', { e: e.message }); return {}; });
   license.refresh().then(() => { send('auth:state', { status: 'refreshed', ...license.session() }); startWatcherIfEnabled(); });
   startMaintenance();
@@ -200,7 +200,7 @@ function registerIPC(ipcMain, _store, winGetter) {
 
   const unlocked = new Set(['app:state','app:openLogs','app:openBackups','app:openExternal','app:relaunch','auth:start','auth:cancel','auth:logout','auth:refresh','tweaks:list','tweaks:revert','tweaks:revertAll','backups:get','backups:export','history:get','games:restoreMinecraftOptions','update:check','update:download','update:install','monitor:stop']);
   const h = (ch, fn) => ipcMain.handle(ch, async (e, ...args) => {
-    try { if (!unlocked.has(ch) && !license.authenticated()) return { ok: false, code: 'auth', error: 'Sign in to use Woof Tweaks. Connect again when the 15-minute offline session ends.' }; return await fn(...args); } catch (err) {
+    try { if (!unlocked.has(ch) && !license.entitled()) return { ok: false, code: 'auth', error: 'Sign in and purchase a lifetime Tweaks plan from $5 USD once. Reconnect when the 15-minute offline session ends.' }; return await fn(...args); } catch (err) {
       if (err && err.code === 'BUSY') return { ok: false, busy: true, error: 'Another change is still running — try again in a moment.' };
       log.error(`${ch} failed`, { e: err && err.message });
       return { ok: false, error: (err && err.message) || 'Something went wrong' };
@@ -212,7 +212,7 @@ function registerIPC(ipcMain, _store, winGetter) {
   ipcMain.on('app:info', (e) => { e.returnValue = { version: app.getVersion(), os: osId(), osName: OS_NAMES[osId()], platform: process.platform, arch: process.arch, packaged: app.isPackaged }; });
   h('app:state', async () => ({
     session: license.session(), settings: settingsSnapshot(), busy: engine.isBusy(),
-    plans: PLAN_ORDER.map((id) => ({ id, name: PLAN_NAMES[id], price: PLAN_PRICES[id], features: PLAN_FEATURES[id], tagline: PLAN_TAGLINES[id] })),
+    plans: PLAN_ORDER.filter(id => id !== 'free').map((id) => ({ id, name: PLAN_NAMES[id], price: PLAN_PRICES[id], features: PLAN_FEATURES[id], tagline: PLAN_TAGLINES[id] })),
     features: Object.fromEntries(Object.keys(tiers.FEATURES).map((f) => [f, { tier: tiers.featureTier(f), allowed: can(f) }])),
     categories: CATEGORIES, update: updater.getState(), watcher: watcher.status(), site: license.SITE,
   }));

@@ -11,6 +11,7 @@ const { isPlan } = require('./core/plans');
 const SITE = process.env.WOOF_SITE || 'https://woof-services.stream';
 const lease = require('./session-lease').createVerifier();
 let refreshTimer = null, expiryTimer = null, lastState = '';
+const entitled = () => authenticated() && cachedPlan() !== 'free';
 const authenticated = () => !!getToken() && !!lease.claims();
 function publishState() { const s = session(), key = JSON.stringify([s.signedIn, s.name, s.plan]); if (key !== lastState) { lastState = key; emit('auth:state', { status: 'refreshed', ...s }); } }
 
@@ -80,6 +81,8 @@ async function refresh() {
       const r = await post('/api/app/license', { token, deviceId: deviceId(), platform: osId(), appVersion: version });
       if (token !== getToken()) return session();
       const b = r.body || {};
+      if (r.status === 426) { lease.clear(); emit('auth:state', {status:'update-required', ...session()}); return session(); }
+      if (r.status === 401 || r.status === 403) { clearSession(); return session(); }
       if (r.status !== 200) throw new Error(`Account check failed (${r.status})`);
       if (b.signedIn === false) { clearSession(); emit('auth:state', { status: 'signed-out', reason: 'Your login expired. Please log in again.' }); return session(); }
       if (b.signedIn !== true || !lease.accept(b.authLease, 'tweaks', deviceId())) throw new Error('Could not verify this account. Connect to the internet and try again.');
@@ -96,7 +99,7 @@ async function refresh() {
 
 function session() {
   const s = store.get('session');
-  return { signedIn: authenticated(), hasAccount: !!getToken(), offlineRemainingMs: lease.remaining(), name: (s && s.name) || null, plan: cachedPlan(), checkedAt: store.get('planCheckedAt', 0) || null };
+  return { signedIn: authenticated(), entitled: entitled(), purchaseRequired: authenticated() && !entitled(), hasAccount: !!getToken(), offlineRemainingMs: lease.remaining(), name: (s && s.name) || null, plan: cachedPlan(), checkedAt: store.get('planCheckedAt', 0) || null };
 }
 
 function clearSession() {
@@ -164,4 +167,4 @@ async function authedPost(pathname, body) {
 
 const stop = () => { cancelLogin(); installationReporter?.stop(); clearInterval(refreshTimer); clearInterval(expiryTimer); lease.clear(); };
 
-module.exports = { authenticated, init, refresh, session, cachedPlan, startLogin, cancelLogin, logout, authedPost, stop, SITE };
+module.exports = { entitled, authenticated, init, refresh, session, cachedPlan, startLogin, cancelLogin, logout, authedPost, stop, SITE };

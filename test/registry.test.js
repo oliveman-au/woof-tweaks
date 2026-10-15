@@ -34,7 +34,7 @@ for (const os of OSES) {
     }
   });
   test(`${os}: security trade-offs and advanced tweaks are Ultra`, () => {
-    for (const t of d.tweaks) if (t.security || t.risk === 'advanced') assert.ok(['ultra'].includes(t.tier), `${t.id} is ${t.risk} but tier ${t.tier}`);
+    for (const t of d.tweaks) if (t.security || t.risk === 'advanced') assert.ok(['ultra','lifetime'].includes(t.tier), `${t.id} is ${t.risk} but tier ${t.tier}`);
   });
   test(`${os}: every action has a tier and an implementation`, () => {
     for (const a of d.actions) { assert.ok(a.tier, `${a.id} has no tier`); assert.ok(a.hasImpl, `${a.id} has no ${os} implementation`); }
@@ -61,7 +61,7 @@ test('at least 150 real system tweaks across all platforms', () => {
 test('30+ game profiles, each with a tier', () => {
   const p = all.win32.profiles;
   assert.ok(p.length >= 31, `only ${p.length}`);
-  for (const x of p) assert.ok(['free', 'plus', 'pro', 'ultra'].includes(x.tier), `${x.id} tier ${x.tier}`);
+  for (const x of p) assert.ok(['good', 'plus', 'pro', 'ultra', 'lifetime'].includes(x.tier), `${x.id} tier ${x.tier}`);
 });
 
 test('no tweak is dropped by validation at load (registry logs nothing)', () => {

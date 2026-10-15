@@ -3,7 +3,7 @@ import { icon, CATEGORY_ICONS } from './icons.js';
 import { esc } from './util.js';
 import { t } from './i18n.js';
 
-export const PLAN_NAME = { free: 'Good', plus: 'Plus', pro: 'Pro', ultra: 'Ultra', lifetime: 'Lifetime' };
+export const PLAN_NAME = { free: 'No plan', good: 'Good', plus: 'Plus', pro: 'Pro', ultra: 'Ultra', lifetime: 'Max' };
 const OS_LABEL = { win32: 'Windows', darwin: 'macOS', linux: 'Linux', chromeos: 'ChromeOS' };
 
 export const toggle = (attrs, checked, disabled, label) => `<label class="switch"${label ? ` aria-label="${esc(label)}"` : ''}><input type="checkbox" ${attrs} ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span class="track"></span><span class="thumb"></span></label>`;

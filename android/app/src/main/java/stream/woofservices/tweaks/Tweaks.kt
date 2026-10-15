@@ -168,6 +168,7 @@ class TweakEngine(private val ctx: Context, private val authenticated: () -> Boo
     /** Apply all-or-nothing. Returns null on success, or a message for the user. */
     fun apply(t: Tweak): String? {
         if (!authenticated()) return "Sign in to use Woof Tweaks."
+        if (!Account.canUse(t.id)) return "This tweak requires a higher lifetime plan. See plans on woof-services.stream/tweaks#plans."
         if (!allowed(t)) return "Allow access first."
         if (isApplied(t)) return null
         val originals = t.changes.map { read(it) }
@@ -220,7 +221,7 @@ class TweakEngine(private val ctx: Context, private val authenticated: () -> Boo
 
     /** Returns how many things were switched on. */
     fun startSession(dnd: Boolean): Int {
-        if (!authenticated()) return 0
+        if (!authenticated() || !Account.entitled()) return 0
         var n = 0
         val ours = mutableListOf<String>()
         for (id in Tweaks.session) {

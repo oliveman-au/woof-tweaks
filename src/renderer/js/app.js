@@ -144,8 +144,11 @@ export function render() {
   const main = document.getElementById('main');
   if (!main) return;
   const p = PAGES[S.page];
-  if (!S.session.signedIn && S.page !== 'backups') {
-    main.innerHTML = `<section class="card auth-gate" style="max-width:650px;margin:8vh auto;padding:36px"><div class="eyebrow">YOUR WOOF ACCOUNT</div><h1 style="margin:12px 0">Sign in. Get set.</h1><p class="muted">Sign in to use Woof Tweaks. Your browser opens the Woof website; if you are already signed in there, just approve the matching code.</p><p class="muted small" style="margin:16px 0">After verification, you can keep using the app for up to 15 minutes without a connection. Reconnect to continue. Opening the app requires an online account check.</p><div class="row" style="flex-wrap:wrap"><button class="btn primary" data-action="login">Continue in browser</button><button class="btn ghost" data-action="reconnect">Check connection</button><button class="btn ghost" data-go="backups">Restore previous changes</button><button class="btn ghost" data-action="support">Get support</button></div></section>`;
+  if (S.session.signedIn && plan() === 'free' && !['backups','settings','upgrade'].includes(S.page)) {
+    main.innerHTML = upgrade.render(); upgrade.mount(main); return;
+  }
+  if (!S.session.signedIn && !['backups','upgrade'].includes(S.page)) {
+    main.innerHTML = `<section class="card auth-gate" style="max-width:650px;margin:8vh auto;padding:36px"><div class="eyebrow">YOUR WOOF ACCOUNT</div><h1 style="margin:12px 0">Sign in. Get set.</h1><p class="muted">Sign in and purchase a lifetime plan from $5 USD once to use Woof Tweaks. Your browser opens the Woof website; if you are already signed in there, just approve the matching code.</p><p class="muted small" style="margin:16px 0">After verification, you can keep using the app for up to 15 minutes without a connection. Reconnect to continue. Opening the app requires an online account check.</p><div class="row" style="flex-wrap:wrap"><button class="btn primary" data-action="login">Continue in browser</button><button class="btn ghost" data-action="reconnect">Check connection</button><button class="btn ghost" data-go="upgrade">See lifetime plans</button><button class="btn ghost" data-go="backups">Restore previous changes</button><button class="btn ghost" data-action="support">Get support</button></div></section>`;
     return;
   }
   main.innerHTML = p.render(S);
@@ -301,7 +304,7 @@ export async function previewModal(ids) {
 
 export async function upgradeModal(required = 'plus', reason = '') {
   const plans = (S.app && S.app.plans) || [];
-  const rank = (p) => ['free', 'plus', 'pro', 'ultra', 'lifetime'].indexOf(p);
+  const rank = (p) => ['free', 'good', 'plus', 'pro', 'ultra', 'lifetime'].indexOf(p);
   const body = `${reason ? `<div class="note info" style="margin-bottom:14px">${icon('lock')}<div>${esc(reason)}</div></div>` : ''}
     <div class="grid g3">${plans.filter((p) => rank(p.id) >= rank(required)).slice(0, 3).map((p) => `<div class="card pad plan ${p.id === 'pro' ? 'featured' : ''}"><h3>${esc(p.name)}</h3><div class="price">${esc(p.price)}</div><ul>${p.features.map((f) => `<li>${icon('check')}${esc(f)}</li>`).join('')}</ul></div>`).join('')}</div>
     <p class="muted small" style="margin-top:14px">Pay securely through Stripe Checkout on the Woof Services website. Your plan unlocks after verified payment. Manage or cancel subscriptions in Billing on the website.</p>`;

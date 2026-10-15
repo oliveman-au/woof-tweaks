@@ -39,7 +39,7 @@ function validateTweak(t, sampleCtx = { hw: {}, settings: {} }) {
   if (!Array.isArray(t.os) || !t.os.length || t.os.some((o) => !OSES.includes(o))) e.push('bad os list');
   if (!RISKS.includes(t.risk)) e.push('bad risk');
   if (![false, 'signout', 'restart'].includes(t.reboot)) e.push('bad reboot');
-  if (!PLAN_ORDER.includes(t.tier) || t.tier === 'lifetime') e.push(`bad tier ${t.tier}`);
+  if (!PLAN_ORDER.includes(t.tier) || t.tier === 'free') e.push(`bad tier ${t.tier}`);
   let ops;
   try { ops = typeof t.changes === 'function' ? t.changes(sampleCtx) : t.changes; } catch (err) { e.push(`changes() threw: ${err.message}`); ops = []; }
   if (!Array.isArray(ops)) e.push('changes must be a list');
@@ -99,7 +99,7 @@ function startupTweaks(hw) {
     const h = crypto.createHash('sha1').update(`${s.hive}|${s.approved}|${s.name}`).digest('hex').slice(0, 10);
     const key = `${s.hive}\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\${s.approved}`;
     return {
-      id: `startup.${h}`, name: `Don't start “${s.name.replace(/\.lnk$/i, '')}” with Windows`, category: 'startup', os: ['win32'], risk: 'safe', reboot: false, tier: 'free',
+      id: `startup.${h}`, name: `Don't start “${s.name.replace(/\.lnk$/i, '')}” with Windows`, category: 'startup', os: ['win32'], risk: 'safe', reboot: false, tier: 'good',
       desc: s.command ? s.command.slice(0, 140) : 'Startup item', startupItem: { name: s.name, command: s.command, hive: s.hive },
       long: { what: 'Turns this item off in Task Manager → Startup apps (it stays installed).', why: 'Fewer programs starting with Windows means more free RAM and a faster boot.', risk: 'The program won\'t start automatically — open it yourself when needed. Revert turns it back on.' },
       changes: [{ t: 'reg', key, name: s.name, type: 'binary', value: DISABLED_BLOB, startupApproved: true }],

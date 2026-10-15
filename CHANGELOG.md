@@ -1,3 +1,12 @@
+# 1.2.0 — lifetime plans [critical]
+
+- All Tweaks plans are now one-time USD purchases: Good $5, Plus $10, Pro $15, Ultra $30, Max $100.
+- Sign in and own a paid plan before applying tweaks or using optimisation tools. Good includes a smaller core set; higher plans unlock more. Valid discount codes still apply.
+- Your purchased plan stays on your account permanently. Upgrades cost the full new plan price, without credit for previous purchases.
+- Fresh account verification is required at app startup, with up to 15 minutes offline in a running verified session.
+- Existing backups and restore controls remain available when signed out or without a plan.
+- Update required to continue. No payment is taken automatically by installing this update.
+
 ## 1.1.8 - 2026-10-15
 
 - Paid upgrades use secure Stripe Checkout only.

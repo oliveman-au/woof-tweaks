@@ -123,18 +123,19 @@ private fun App(resumed: Int, justUpdated: Boolean) {
     val engine = remember { TweakEngine(ctx) }
     var tab by remember { mutableStateOf(Tab.HOME) }
     var authenticated by remember { mutableStateOf(Account.authenticated()) }
+    var currentPlan by remember { mutableStateOf(Account.plan()) }
     LaunchedEffect(Unit) {
         while (true) {
             withContext(Dispatchers.IO) { Account.refresh(ctx) }
-            authenticated = Account.authenticated()
+            authenticated = Account.authenticated(); currentPlan = Account.plan()
             delay(60000)
         }
     }
     LaunchedEffect(Unit) {
         while (true) {
-            val allowed = Account.authenticated()
+            val allowed = Account.authenticated() && Account.entitled()
             if (!allowed && engine.sessionActive()) engine.endSession()
-            authenticated = allowed
+            authenticated = Account.authenticated(); currentPlan = Account.plan()
             delay(1000)
         }
     }
@@ -168,7 +169,7 @@ private fun App(resumed: Int, justUpdated: Boolean) {
             },
         ) { pad ->
             Box(Modifier.padding(pad).fillMaxSize().background(Bg)) {
-                if (!authenticated && tab != Tab.GUIDE) AccountGate(engine) { authenticated = Account.authenticated(); refresh++ }
+                if ((!authenticated || currentPlan == "free") && tab != Tab.GUIDE) AccountGate(engine) { authenticated = Account.authenticated(); refresh++ }
                 else when (tab) {
                     Tab.HOME -> HomeScreen(engine, key, say, bump) { tab = it }
                     Tab.TWEAKS -> TweaksScreen(engine, key, say, bump)
@@ -268,7 +269,7 @@ private fun HomeScreen(engine: TweakEngine, key: Int, say: (String) -> Unit, bum
                         var n = 0
                         var skipped = 0
                         Tweaks.all.filter { it.risk == Risk.SAFE }.forEach { t ->
-                            if (!engine.allowed(t)) skipped++ else if (!engine.isApplied(t) && engine.apply(t) == null) n++
+                            if (!engine.allowed(t) || !Account.canUse(t.id)) skipped++ else if (!engine.isApplied(t) && engine.apply(t) == null) n++
                         }
                         say(if (skipped > 0) "Applied $n tweaks. $skipped need access (see below)." else "Applied $n tweaks")
                         bump()
@@ -312,12 +313,13 @@ private fun TweaksScreen(engine: TweakEngine, key: Int, say: (String) -> Unit, b
                             Column(Modifier.weight(1f)) {
                                 Text(t.title, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
                                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
+                                    Pill(if (Account.requiredPlan(t.id) == "lifetime") "Max" else Account.requiredPlan(t.id).replaceFirstChar { it.uppercase() }, Brand)
                                     Pill(t.risk.label, when (t.risk) { Risk.SAFE -> Good; Risk.MODERATE -> Warn; Risk.ADVANCED -> Bad })
                                     if (t.needs == Needs.ADVANCED) Pill("Advanced access", Brand)
                                     if (!applied && engine.isAtTarget(t)) Pill("Already set", Muted)
                                 }
                             }
-                            Switch(checked = applied, enabled = allowed || applied, onCheckedChange = { on ->
+                            Switch(checked = applied, enabled = (allowed && Account.canUse(t.id)) || applied, onCheckedChange = { on ->
                                 val err = if (on) engine.apply(t) else engine.revert(t)
                                 say(err ?: if (on) "${t.title}: on" else "${t.title}: reverted")
                                 bump()

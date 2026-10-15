@@ -4,7 +4,7 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const OSES = [['win32', 'Windows'], ['darwin', 'macOS'], ['linux', 'Linux'], ['chromeos', 'ChromeOS (Linux container)']];
-const NAMES = { free: 'Good', plus: 'Plus', pro: 'Pro', ultra: 'Ultra' };
+const NAMES = { free: 'No plan', good: 'Good', lifetime: 'Max', plus: 'Plus', pro: 'Pro', ultra: 'Ultra' };
 const dumpCode = `
 const { build } = require('./src/tweaks');
 const games = require('./src/games');
@@ -21,12 +21,12 @@ process.stdout.write(JSON.stringify({
 const data = Object.fromEntries(OSES.map(([id]) => [id, JSON.parse(execFileSync(process.execPath, ['-e', dumpCode], { cwd: path.join(__dirname, '../..'), env: { ...process.env, WOOF_FAKE_OS: id }, encoding: 'utf8' }))]));
 const esc = (s) => String(s).replace(/\|/g, '\\|').replace(/\n/g, ' ');
 let md = '# Woof Tweaks — every tweak\n\nGenerated from the app\'s tweak registry (`node test/helpers/make-tweaks-md.js`). Plan tiers come from `src/config/tiers.js`.\nEvery tweak snapshots the exact original value before changing it, and Revert restores that value.\n\n';
-md += '## Totals\n\n| OS | Good | Plus | Pro | Ultra | Total |\n|---|---|---|---|---|---|\n';
-for (const [id, name] of OSES) { const t = data[id].tweaks; const c = (x) => t.filter((y) => y.tier === x).length; md += `| ${name} | ${c('free')} | ${c('plus')} | ${c('pro')} | ${c('ultra')} | **${t.length}** |\n`; }
+md += '## Totals\n\n| OS | Good | Plus | Pro | Ultra | Max | Total |\n|---|---|---|---|---|---|---|\n';
+for (const [id, name] of OSES) { const t = data[id].tweaks; const c = (x) => t.filter((y) => y.tier === x).length; md += `| ${name} | ${c('good')} | ${c('plus')} | ${c('pro')} | ${c('ultra')} | ${c('lifetime')} | **${t.length}** |\n`; }
 md += `\nPlus per-game tweaks on Windows (fullscreen flag, GPU preference, High priority, QoS tag, Defender exclusion — generated for each detected game) and Windows startup-app toggles.\n`;
 for (const [id, name] of OSES) {
   const d = data[id];
-  md += `\n## ${name}\n\n| Tweak | Plan | Risk | Admin | Restart | What it changes |\n|---|---|---|---|---|---|\n`;
+  md += `\n## ${name}\n\n| Tweak | Plan | Risk | Admin | Restart | What it changes |\n|---|---|---|---|---|---|---|\n`;
   for (const t of d.tweaks) md += `| **${esc(t.name)}** <br><sub>\`${t.id}\` · ${t.category}</sub> | ${NAMES[t.tier]} | ${t.risk} | ${t.admin ? 'yes' : '—'} | ${t.reboot === 'restart' ? 'restart' : t.reboot === 'signout' ? 'sign out' : '—'} | ${esc(t.what)} |\n`;
   md += `\n**One-off actions:** ${d.actions.map((a) => `${a.name} (${NAMES[a.tier]}${a.admin ? ', admin' : ''})`).join(' · ') || '—'}\n\n**Guides:** ${d.guides.join(' · ') || '—'}\n\n**Game profiles (${d.games.length}):** ${d.games.map((g) => `${g.name} (${NAMES[g.tier]})`).join(' · ')}\n`;
 }

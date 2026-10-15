@@ -3,12 +3,12 @@ import { esc } from '../util.js';
 import { S, plan, loginFlow } from '../app.js';
 
 const api = window.woof;
-const RANK = ['free', 'plus', 'pro', 'ultra', 'lifetime'];
+const RANK = ['free', 'good', 'plus', 'pro', 'ultra', 'lifetime'];
 
 export function render() {
   const plans = (S.app && S.app.plans) || [];
   const cur = plan();
-  const n = (tier) => S.tweaks.filter((t) => !t.hidden && t.status !== 'na' && RANK.indexOf(t.tier) <= RANK.indexOf(tier === 'lifetime' ? 'ultra' : tier)).length;
+  const n = (tier) => S.tweaks.filter((t) => !t.hidden && t.status !== 'na' && RANK.indexOf(t.tier) <= RANK.indexOf(tier)).length;
   return `<div class="page">
     <div class="page-head"><div><h1>Plans</h1><p>Every plan includes backups, one-click Revert and the restore point. Paid plans unlock more tweaks and tools — the exact list is in All Tweaks (locked ones show their plan).</p></div></div>
     ${S.session.signedIn ? '' : `<div class="note info" style="margin-bottom:16px">${icon('user')}<div style="flex:1">Already bought a plan? Log in so the app can see it.</div><button class="btn sm primary" id="login">Log in</button></div>`}
@@ -20,7 +20,7 @@ export function render() {
       <ul>${p.features.map((f) => `<li>${icon('check')}<span>${esc(f)}</span></li>`).join('')}</ul>
       <div style="margin-top:auto">${p.id === cur ? `<span class="btn sm" style="width:100%;pointer-events:none">${icon('check', 'sm')}Your plan</span>` : p.id === 'free' ? '' : `<button class="btn sm ${p.id === 'pro' ? 'primary' : ''}" style="width:100%" data-buy="${p.id}">Get ${esc(p.name)}</button>`}</div>
     </div>`).join('')}</div>
-    <div class="card pad" style="margin-top:16px"><div class="row wrap" style="gap:14px"><span class="icon-wrap" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(var(--accent-rgb),.14);color:var(--accent)">${icon('info')}</span><div style="flex:1;min-width:240px"><b>How buying works</b><div class="muted small">Choose a plan on woof-services.stream and pay securely through Stripe Checkout. Your plan unlocks after verified payment. Manage or cancel subscriptions in Billing on the website.</div></div></div></div>
+    <div class="card pad" style="margin-top:16px"><div class="row wrap" style="gap:14px"><span class="icon-wrap" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(var(--accent-rgb),.14);color:var(--accent)">${icon('info')}</span><div style="flex:1;min-width:240px"><b>How buying works</b><div class="muted small">Choose a plan on woof-services.stream and pay securely through Stripe Checkout. Your plan unlocks after verified payment. Every plan is a one-time purchase and stays on your account permanently. Upgrades cost the full new plan price; valid discount codes still apply.</div></div></div></div>
   </div>`;
 }
 export function mount(root) {

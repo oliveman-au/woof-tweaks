@@ -81,7 +81,7 @@ test('apply then revert restores exact original values, including values that di
 });
 
 test('plan gating is enforced in the engine (main process), not just the UI', async () => {
-  const { engine, system, setPlan } = freshEngine({ plan: 'free' });
+  const { engine, system, setPlan } = freshEngine({ plan: 'good' });
   const r = await engine.apply(['a', 'b', 'pro1', 'ult']);
   assert.deepStrictEqual(r.results.filter((x) => x.ok && !x.skipped).map((x) => x.id), ['a']);
   for (const id of ['b', 'pro1', 'ult']) {

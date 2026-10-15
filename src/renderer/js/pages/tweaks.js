@@ -21,7 +21,7 @@ function filtered() {
   if (F.hideNa) list = list.filter((t) => t.status !== 'na' || t.applied);
   if (q) list = list.map((t) => [t, searchScore(t, q)]).filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]).map(([t]) => t);
   else if (F.sort === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name));
-  else if (F.sort === 'tier') list = [...list].sort((a, b) => ['free', 'plus', 'pro', 'ultra'].indexOf(a.tier) - ['free', 'plus', 'pro', 'ultra'].indexOf(b.tier));
+  else if (F.sort === 'tier') list = [...list].sort((a, b) => ['good', 'plus', 'pro', 'ultra', 'lifetime'].indexOf(a.tier) - ['good', 'plus', 'pro', 'ultra', 'lifetime'].indexOf(b.tier));
   else if (F.sort === 'risk') list = [...list].sort((a, b) => ['safe', 'moderate', 'advanced'].indexOf(a.risk) - ['safe', 'moderate', 'advanced'].indexOf(b.risk));
   return list;
 }
@@ -50,7 +50,7 @@ export function render() {
     </div>
     <div class="row wrap" style="gap:8px;margin:-4px 0 6px">
       <select class="select" id="f-state" aria-label="Show"><option value="all">Show: everything</option><option value="recommended">Recommended for my PC</option><option value="applied">Applied by Woof Tweaks</option><option value="default">Not applied</option><option value="unlocked">Unlocked on my plan</option><option value="attention">Needs attention</option></select>
-      <select class="select" id="f-tier" aria-label="Plan"><option value="all">Any plan</option>${['free', 'plus', 'pro', 'ultra'].map((p) => `<option value="${p}">${PLAN_NAME[p]}</option>`).join('')}</select>
+      <select class="select" id="f-tier" aria-label="Plan"><option value="all">Any plan</option>${['good', 'plus', 'pro', 'ultra', 'lifetime'].map((p) => `<option value="${p}">${PLAN_NAME[p]}</option>`).join('')}</select>
       <select class="select" id="f-risk" aria-label="Risk"><option value="all">Any risk</option><option value="safe">Safe</option><option value="moderate">Moderate</option><option value="advanced">Advanced</option></select>
       <select class="select" id="f-sort" aria-label="Sort"><option value="category">Sort: category</option><option value="name">Sort: A–Z</option><option value="tier">Sort: plan</option><option value="risk">Sort: risk</option></select>
       <label class="row small muted" style="gap:6px;margin-left:4px"><input type="checkbox" id="f-na" ${F.hideNa ? 'checked' : ''}> Hide ones that don't apply to this PC</label>
