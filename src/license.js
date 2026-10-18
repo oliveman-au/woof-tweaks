@@ -2,10 +2,10 @@
 // Account + plan. The server decides the plan (no DRM, no local unlocks). Login is a device link:
 // the app gets a short code, the user approves it on woof-services.stream, the app's poll gets a token.
 // The token is stored encrypted with the OS keychain (Electron safeStorage) when available.
-const https = require('https');
+const { createTransport } = require('./account-transport');
 const { createReporter } = require('./installations');
 let installationReporter = null;
-const { safeStorage } = require('electron');
+const { safeStorage, net } = require('electron');
 const { isPlan } = require('./core/plans');
 
 const SITE = process.env.WOOF_SITE || 'https://woof-services.stream';
@@ -33,19 +33,7 @@ function init(opts) {
 }
 
 function post(pathname, body, timeout = 12_000) {
-  return new Promise((resolve, reject) => {
-    const url = new URL(pathname, SITE);
-    const data = JSON.stringify(body);
-    // Node requests carry no Origin header — the site uses that to tell the app from a browser.
-    const req = https.request(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data), 'User-Agent': `WoofTweaks/${version}` }, timeout }, (res) => {
-      let buf = '';
-      res.on('data', (c) => { buf += c; if (buf.length > 1e6) req.destroy(); });
-      res.on('end', () => { try { resolve({ status: res.statusCode, body: JSON.parse(buf) }); } catch { reject(new Error(`Bad response (${res.statusCode})`)); } });
-    });
-    req.on('error', reject);
-    req.on('timeout', () => req.destroy(new Error('The website took too long to answer')));
-    req.end(data);
-  });
+  return createTransport({ browserNet: net, version })(new URL(pathname, SITE), body, timeout);
 }
 
 // ---------- token storage ----------
@@ -156,7 +144,7 @@ async function logout() {
   return session();
 }
 
-/** For other app→site calls (feedback, cloud sync). */
+/** For other appâ†’site calls (feedback, cloud sync). */
 async function authedPost(pathname, body) {
   const token = getToken();
   if (!token || !authenticated()) throw new Error('Sign in online first');
