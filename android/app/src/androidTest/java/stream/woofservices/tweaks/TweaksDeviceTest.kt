@@ -37,7 +37,7 @@ class TweaksDeviceTest {
     }
 
     @Test fun everyTweakAppliesAndRevertsExactly() {
-        val e = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { true }
+        val e = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }, entitled = { true }) { true }
         assertTrue(e.canWriteSettings())
         assertTrue(e.hasAdvanced())
         var applied = 0
@@ -60,7 +60,7 @@ class TweaksDeviceTest {
     }
 
     @Test fun gameModeTurnsEverythingBackOff() {
-        val e = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { true }
+        val e = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }, entitled = { true }) { true }
         if (e.sessionActive()) e.endSession()
         val nm = ctx.getSystemService(NotificationManager::class.java)
         val filter = nm.currentInterruptionFilter
@@ -75,8 +75,8 @@ class TweaksDeviceTest {
     }
 
     @Test fun signedOutCannotApplyButCanRestore() {
-        val allowed = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { true }
-        val locked = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { false }
+        val allowed = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }, entitled = { true }) { true }
+        val locked = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }, entitled = { true }) { false }
         val tweak = Tweaks.byId("screen-awake")!!
         if (allowed.isApplied(tweak)) allowed.revert(tweak)
         val before = tweak.changes.map { read(it) }
@@ -89,10 +89,11 @@ class TweaksDeviceTest {
     }
 
     @Test fun signedInWithoutRequiredTierCannotChangeSettings() {
-        val restricted = TweakEngine(ctx, planAllows = { false }) { true }
+        val restricted = TweakEngine(ctx, planAllows = { false }, entitled = { false }) { true }
         val tweak = Tweaks.byId("screen-awake")!!
         val before = tweak.changes.map { read(it) }
         assertTrue(restricted.apply(tweak)!!.contains("higher lifetime plan"))
+        assertEquals(0, restricted.startSession(true))
         assertEquals(before, tweak.changes.map { read(it) })
     }
 

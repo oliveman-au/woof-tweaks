@@ -129,6 +129,7 @@ object Tweaks {
 class TweakEngine(
     private val ctx: Context,
     private val planAllows: (String) -> Boolean = { Account.canUse(it) },
+    private val entitled: () -> Boolean = { Account.entitled() },
     private val authenticated: () -> Boolean = { Account.authenticated() },
 ) {
     private val prefs = ctx.getSharedPreferences("woof-tweaks", Context.MODE_PRIVATE)
@@ -225,7 +226,7 @@ class TweakEngine(
 
     /** Returns how many things were switched on. */
     fun startSession(dnd: Boolean): Int {
-        if (!authenticated() || !Account.entitled()) return 0
+        if (!authenticated() || !entitled()) return 0
         var n = 0
         val ours = mutableListOf<String>()
         for (id in Tweaks.session) {
