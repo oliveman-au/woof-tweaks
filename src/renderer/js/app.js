@@ -16,6 +16,7 @@ import * as settings from './pages/settings.js';
 import * as upgrade from './pages/upgrade.js';
 import { onboarding } from './onboarding.js';
 import { whatsNew } from './changelog.js';
+import { updateRecovery } from './update-recovery.js';
 
 const api = window.woof;
 const PAGES = { dashboard, games, tweaks, presets, benchmark, cleanup, guides, status, backups, settings, upgrade };
@@ -144,6 +145,8 @@ export function render() {
   const main = document.getElementById('main');
   if (!main) return;
   const p = PAGES[S.page];
+  const recovery = updateRecovery(S.session, S.app && S.app.update);
+  if (recovery && S.page !== 'backups') { main.innerHTML = recovery; return; }
   if (S.session.signedIn && plan() === 'free' && !['backups','settings','upgrade'].includes(S.page)) {
     main.innerHTML = upgrade.render(); upgrade.mount(main); return;
   }
@@ -321,7 +324,8 @@ export async function loginFlow() {
     actions: [{ label: 'Cancel', kind: 'ghost', value: null }],
     onMount: async (ov, done) => {
       off = api.onAuth((s) => {
-        if (s.status === 'approved') { toast('success', `Logged in${s.name ? ` as ${s.name}` : ''}`, `Your plan: ${PLAN_NAME[s.plan] || 'Good'}`); done('ok'); }
+        if (s.status === 'update-required') { done('update'); }
+        else if (s.status === 'approved') { toast('success', `Logged in${s.name ? ` as ${s.name}` : ''}`, `Your plan: ${PLAN_NAME[s.plan] || 'Good'}`); done('ok'); }
         else if (s.status === 'error') { ov.querySelector('.modal-body').innerHTML = `<p>${esc(s.reason || 'Could not verify sign-in. Try again.')}</p>`; }
         else if (s.status === 'denied') { ov.querySelector('.modal-body').innerHTML = `<div class="note warn">${icon('alert')}<div>The login was denied on the website.</div></div>`; }
         else if (s.status === 'expired') { ov.querySelector('.modal-body').innerHTML = `<div class="note warn">${icon('alert')}<div>The code expired. Close this and click Log in again.</div></div>`; }
@@ -354,6 +358,10 @@ function bindGlobal() {
       case 'support': return api.openExternal('https://woof-services.stream/support?service=tweaks');
       case 'login': return loginFlow();
       case 'reconnect': await api.refreshPlan(); return reloadEverything();
+      case 'update-check': await api.checkUpdate(); return reloadEverything();
+      case 'update-install': return api.installUpdate();
+      case 'update-download': return api.downloadUpdate();
+      case 'update-manual': return api.openExternal('https://woof-services.stream/tweaks#download');
       case 'upgrade': return upgradeModal(a.dataset.plan || 'plus');
       case 'expand': { card.classList.toggle('open'); a.setAttribute('aria-expanded', card.classList.contains('open')); return; }
       case 'preview-one': return previewModal([id]);
@@ -387,7 +395,7 @@ function bindGlobal() {
   api.onRegistry(async () => { await loadTweaks(); const g = await api.games(); if (Array.isArray(g)) S.games = g; await refreshScan(); render(); });
   api.onToast((tt) => toast(tt.type || 'info', tt.title, tt.message));
   api.onAuth(async (s) => {
-    if (!['refreshed', 'signed-out', 'approved'].includes(s.status)) return;
+    if (!['refreshed', 'signed-out', 'approved', 'update-required'].includes(s.status)) return;
     const previous = S.session;
     const st = await api.state(); S.app = st; S.session = st.session;
     if (S.session.signedIn && (!previous.signedIn || previous.plan !== S.session.plan)) await reloadEverything();
@@ -395,7 +403,7 @@ function bindGlobal() {
     if (S.session.signedIn) welcomeOnce();
     if (s.status === 'signed-out' && s.reason) toast('warn', 'Signed out', s.reason);
   });
-  api.onUpdate((u) => { if (S.app) S.app.update = u; if (u.status === 'available' && u.manual) toast('info', `Woof Tweaks ${u.version} is out`, 'Move Woof Tweaks to your Applications folder so it can update itself, or download it now.', { action: { label: 'Download', run: () => api.downloadUpdate() }, ms: 20000 }); if (S.page === 'settings') render(); });
+  api.onUpdate((u) => { if (S.app) S.app.update = u; if (u.status === 'available' && u.manual) toast('info', `Woof Tweaks ${u.version} is out`, 'Move Woof Tweaks to your Applications folder so it can update itself, or download it now.', { action: { label: 'Download', run: () => api.downloadUpdate() }, ms: 20000 }); if (S.page === 'settings' || S.session.updateRequired || u.critical) render(); });
   api.onWatcher((w) => { if (w.type === 'start') toast('info', `${w.name || 'Game'} started`, 'Game Mode Watcher applied its profile.'); if (w.type === 'stop') toast('info', 'Game closed', 'Watcher reverted what it applied.'); });
   api.onFinishing(() => {
     const f = document.createElement('div');
@@ -403,14 +411,6 @@ function bindGlobal() {
     f.innerHTML = `<div class="brand-mark" style="width:56px;height:56px;border-radius:16px;margin:0 auto">${PAW}</div><h2>Finishing safely…</h2><p class="muted">Woof Tweaks is completing the current change so nothing is left half-done. It will close in a moment.</p><div class="progress indeterminate" style="width:260px;margin:0 auto"><i></i></div>`;
     document.body.appendChild(f);
   });
-}
-
-// Updates install themselves in the background (see src/updater.js). Only a Mac app that can't replace itself
-// (not in Applications / still in Downloads) asks the user to download a [critical] release.
-function criticalGate() {
-  const u = S.app && S.app.update;
-  if (!u || !u.critical || !u.manual || u.status !== 'available') return;
-  modal({ title: 'Important update', icon: 'download', dismissable: false, body: `<p>Version ${esc(u.version)} fixes an important problem. Download it and replace Woof Tweaks in your Applications folder — your backups are kept. Once it's in Applications, future updates install by themselves.</p>`, actions: [{ label: 'Download update', kind: 'primary', run: () => { api.downloadUpdate(); return false; } }] });
 }
 
 let welcomed = false;
@@ -430,6 +430,5 @@ function welcomeOnce() {
   bindGlobal();
   document.getElementById('app').innerHTML = `<div class="finishing" style="background:var(--bg)"><div class="brand-mark" style="width:56px;height:56px;border-radius:16px;margin:0 auto">${PAW}</div><p class="muted">Loading Woof Tweaks…</p></div>`;
   await loadAll();
-  criticalGate();
   welcomeOnce();
 })();

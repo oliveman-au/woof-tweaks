@@ -4,6 +4,7 @@ import { esc } from './util.js';
 import { S, modal, setSetting } from './app.js';
 
 export const CHANGELOG = [
+  {version: '1.2.2', date: '2026-10-21', title: 'Update recovery, made clear', items: ['Required updates stay visible before sign-in, with progress, retry and restart controls', 'Get the latest installer or support if an update cannot finish; backups remain recoverable', 'An approved account waiting for an update no longer shows a misleading sign-in failure', 'All Tweaks plans use lifetime access with one-time payments']},
   {version: '1.1.8', date: '2026-10-15', title: 'Secure Stripe checkout', items: ['All upgrades use Stripe Checkout on the website', 'Verified payments activate your plan; manage subscriptions from Billing']},
   {
     version: '1.1.7', date: '2026-10-14', title: 'Your Woof account, connected',

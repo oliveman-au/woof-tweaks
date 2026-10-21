@@ -11,9 +11,10 @@ const { isPlan } = require('./core/plans');
 const SITE = process.env.WOOF_SITE || 'https://woof-services.stream';
 const lease = require('./session-lease').createVerifier();
 let refreshTimer = null, expiryTimer = null, lastState = '';
+let updateRequired = false, minimumVersion = null;
 const entitled = () => authenticated() && cachedPlan() !== 'free';
 const authenticated = () => !!getToken() && !!lease.claims();
-function publishState() { const s = session(), key = JSON.stringify([s.signedIn, s.name, s.plan]); if (key !== lastState) { lastState = key; emit('auth:state', { status: 'refreshed', ...s }); } }
+function publishState() { const s = session(), key = JSON.stringify([s.signedIn, s.name, s.plan, s.updateRequired, s.minimumVersion]); if (key !== lastState) { lastState = key; emit('auth:state', { status: 'refreshed', ...s }); } }
 
 let store = null;
 let deviceId = () => 'unknown';
@@ -27,6 +28,7 @@ function init(opts) {
   store = opts.store; deviceId = opts.deviceId; osId = opts.osId; version = opts.version; emit = opts.emit || emit;
   installationReporter?.stop();
   if (refreshTimer) clearInterval(refreshTimer); if (expiryTimer) clearInterval(expiryTimer); lease.clear();
+  updateRequired = false; minimumVersion = null; lastState = '';
   refreshTimer = setInterval(() => refresh().catch(() => {}), 60000); refreshTimer.unref();
   expiryTimer = setInterval(publishState, 1000); expiryTimer.unref();
   if (opts.isPackaged) { installationReporter = createReporter({ post, deviceId, osId, version }); installationReporter.start(); }
@@ -69,11 +71,16 @@ async function refresh() {
       const r = await post('/api/app/license', { token, deviceId: deviceId(), platform: osId(), appVersion: version });
       if (token !== getToken()) return session();
       const b = r.body || {};
-      if (r.status === 426) { lease.clear(); emit('auth:state', {status:'update-required', ...session()}); return session(); }
+      if (r.status === 426) {
+        lease.clear(); updateRequired = true;
+        minimumVersion = /^\d+\.\d+\.\d+$/.test(b.minimumVersion || '') ? b.minimumVersion : null;
+        return session();
+      }
       if (r.status === 401 || r.status === 403) { clearSession(); return session(); }
       if (r.status !== 200) throw new Error(`Account check failed (${r.status})`);
       if (b.signedIn === false) { clearSession(); emit('auth:state', { status: 'signed-out', reason: 'Your login expired. Please log in again.' }); return session(); }
       if (b.signedIn !== true || !lease.accept(b.authLease, 'tweaks', deviceId())) throw new Error('Could not verify this account. Connect to the internet and try again.');
+      updateRequired = false; minimumVersion = null;
       if (isPlan(b.plan)) { store.set('plan', b.plan); store.set('planCheckedAt', Date.now()); }
       if (b.name) { const s = store.get('session'); if (s) store.set('session', { ...s, name: b.name }); }
       store.set('lastOnlineAt', Date.now());
@@ -87,11 +94,11 @@ async function refresh() {
 
 function session() {
   const s = store.get('session');
-  return { signedIn: authenticated(), entitled: entitled(), purchaseRequired: authenticated() && !entitled(), hasAccount: !!getToken(), offlineRemainingMs: lease.remaining(), name: (s && s.name) || null, plan: cachedPlan(), checkedAt: store.get('planCheckedAt', 0) || null };
+  return { updateRequired, minimumVersion, signedIn: authenticated(), entitled: entitled(), purchaseRequired: authenticated() && !entitled(), hasAccount: !!getToken(), offlineRemainingMs: lease.remaining(), name: (s && s.name) || null, plan: cachedPlan(), checkedAt: store.get('planCheckedAt', 0) || null };
 }
 
 function clearSession() {
-  lease.clear();
+  lease.clear(); updateRequired = false; minimumVersion = null;
   store.delete('session');
   store.set('plan', 'free');
   store.delete('planCheckedAt');
@@ -121,9 +128,9 @@ async function startLogin(openUrl) {
         saveToken(p.token, p.name || null);
         if (isPlan(p.plan)) { store.set('plan', p.plan); store.set('planCheckedAt', Date.now()); }
         await refresh();
-        if (generation === loginGeneration && !authenticated()) await refresh();
+        if (generation === loginGeneration && !authenticated() && !updateRequired) await refresh();
         if (generation !== loginGeneration) { if (getToken() === p.token) clearSession(); await post('/api/app/logout', { token: p.token }).catch(() => {}); return; }
-        emit('auth:state', { status: authenticated() ? 'approved' : 'error', ...(!authenticated() ? { reason: 'Sign-in could not be verified. Check your connection and try again.' } : {}), ...session() });
+        emit('auth:state', { status: updateRequired ? 'update-required' : authenticated() ? 'approved' : 'error', ...(!authenticated() ? { reason: 'Sign-in could not be verified. Check your connection and try again.' } : {}), ...session() });
         return;
       }
       if (p.status === 'denied' || p.status === 'expired') { poll = null; emit('auth:state', { status: p.status }); return; }

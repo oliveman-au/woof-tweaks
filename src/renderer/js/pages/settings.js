@@ -20,9 +20,9 @@ export function render() {
     <div class="grid g2" style="align-items:start">
       <div class="col" style="gap:14px">
         <div class="card set-group"><h2 style="padding-top:12px">Account & plan</h2>
-          <div class="set-row"><div class="l"><b>${se.signedIn ? esc(se.name || 'Logged in') : 'Not logged in'}</b><span>${se.signedIn ? `Plan: <b>${PLAN_NAME[se.plan]}</b>${se.checkedAt ? ` · checked ${esc(when(new Date(se.checkedAt).toISOString()))}` : ''}` : 'The Good plan works without an account. Log in to use a paid plan.'}</span></div>
+          <div class="set-row"><div class="l"><b>${se.signedIn ? esc(se.name || 'Logged in') : 'Not logged in'}</b><span>${se.signedIn ? `Plan: <b>${PLAN_NAME[se.plan]}</b>${se.checkedAt ? ` · checked ${esc(when(new Date(se.checkedAt).toISOString()))}` : ''}` : 'Sign in and purchase a lifetime plan to use tweaks. Backups can always be restored.'}</span></div>
             ${se.signedIn ? `<button class="btn sm" id="refresh-plan">${icon('refresh', 'sm')}Refresh</button><button class="btn sm ghost" id="logout">${icon('logout', 'sm')}Log out</button>` : `<button class="btn sm primary" id="login">${icon('user', 'sm')}Log in</button>`}</div>
-          <div class="set-row"><div class="l"><b>Manage plan</b><span>Upgrades use secure Stripe Checkout on the website. Manage subscriptions in Billing.</span></div><button class="btn sm" data-go="upgrade">${icon('crown', 'sm')}Plans</button></div>
+          <div class="set-row"><div class="l"><b>Manage plan</b><span>Upgrades use secure Stripe Checkout on the website. Lifetime access stays on your account. Upgrades cost the full listed one-time price.</span></div><button class="btn sm" data-go="upgrade">${icon('crown', 'sm')}Plans</button></div>
           <div class="set-row"><div class="l"><b>Cloud sync${lockBadge('cloudSync')}</b><span>Back up your presets and custom game profiles to your account.</span></div><button class="btn sm" id="push">${icon('upload', 'sm')}Upload</button><button class="btn sm" id="pull">${icon('download', 'sm')}Download</button></div>
         </div>
         <div class="card set-group"><h2 style="padding-top:12px">Appearance</h2>

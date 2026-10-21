@@ -62,7 +62,8 @@ function freshEngine({ authenticated = () => true, plan = 'ultra', system = new 
   const registry = { osId: 'test', osName: 'Test OS', tweaks: new Map(list.map((t) => [t.id, t])), actions: new Map() };
   const backend = fakeBackend(system, backendOpts);
   let currentPlan = plan;
-  engine.init({ registry, dataDir, backend, getAuthenticated: authenticated, getPlan: () => currentPlan, getHardware: async () => ({}), getSettings: () => ({}) });
+  // The fake system must never invoke a real Windows restore-point/UAC request.
+  engine.init({ registry, dataDir, backend, getAuthenticated: authenticated, getPlan: () => currentPlan, getHardware: async () => ({}), getSettings: () => ({ autoRestorePoint: false }) });
   return { engine, system, backend, dataDir, setPlan: (p) => { currentPlan = p; } };
 }
 

@@ -60,3 +60,37 @@ test('a cancelled in-flight approval cannot sign the app back in',async()=>{
   assert.equal(approved,false);assert.equal(license.authenticated(),false);assert.equal(s.get('session'),undefined);
  }finally{license.stop();}
 });
+
+test('mandatory update survives refreshed events and offline checks without granting access', async()=>{
+ const s=store(),events=[];
+ license.init({store:s,deviceId:()=> 'device',osId:()=> 'win32',version:'1.2.1',isPackaged:false,emit:(_ch,d)=>events.push(d)});
+ try{
+  s.set('session',{raw:'update-token',name:'Tester'});
+  pending.push({body:{signedIn:true,plan:'plus',authLease:proof('plus')}});
+  assert.equal((await license.refresh()).signedIn,true);
+  pending.push({status:426,body:{signedIn:true,updateRequired:true,minimumVersion:'1.2.2'}});
+  const blocked=await license.refresh();
+  assert.equal(blocked.signedIn,false);assert.equal(blocked.hasAccount,true);
+  assert.equal(blocked.updateRequired,true);assert.equal(blocked.minimumVersion,'1.2.2');
+  assert.equal(events.at(-1).updateRequired,true);assert.equal(license.entitled(),false);
+  pending.push({error:'offline'});assert.equal((await license.refresh()).updateRequired,true);
+  pending.push({body:{signedIn:true,plan:'plus',authLease:proof('plus')}});
+  assert.equal((await license.refresh()).updateRequired,false);assert.equal(license.entitled(),true);
+  pending.push({body:{ok:true}});await license.logout();assert.equal(license.session().updateRequired,false);
+ }finally{license.stop();}
+});
+
+test('approved browser login reports update recovery without repeated license requests',async()=>{
+ const s=store();let ready;
+ const done=new Promise(resolve=>{ready=resolve;});
+ license.init({store:s,deviceId:()=> 'device',osId:()=> 'win32',version:'1.2.1',isPackaged:false,emit:(_ch,d)=>{if(d.status==='update-required')ready(d);}});
+ try{
+  pending.push({body:{ok:true,code:'UPDATE-ME',url:'https://woof-services.stream/app/link?code=UPDATE-ME',pollToken:'update-poll',expiresIn:600,interval:2}});
+  pending.push({body:{status:'approved',token:'approved-update-token',name:'Tester'}});
+  pending.push({status:426,body:{signedIn:true,updateRequired:true,minimumVersion:'1.2.2'}});
+  await license.startLogin(()=>{});
+  const result=await done;
+  assert.equal(result.updateRequired,true);assert.equal(result.hasAccount,true);
+  assert.equal(result.signedIn,false);assert.equal(pending.length,0);assert.equal(license.entitled(),false);
+ }finally{license.stop();}
+});
