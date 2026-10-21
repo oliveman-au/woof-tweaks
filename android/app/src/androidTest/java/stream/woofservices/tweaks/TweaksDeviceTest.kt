@@ -37,7 +37,7 @@ class TweaksDeviceTest {
     }
 
     @Test fun everyTweakAppliesAndRevertsExactly() {
-        val e = TweakEngine(ctx) { true }
+        val e = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { true }
         assertTrue(e.canWriteSettings())
         assertTrue(e.hasAdvanced())
         var applied = 0
@@ -60,7 +60,7 @@ class TweaksDeviceTest {
     }
 
     @Test fun gameModeTurnsEverythingBackOff() {
-        val e = TweakEngine(ctx) { true }
+        val e = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { true }
         if (e.sessionActive()) e.endSession()
         val nm = ctx.getSystemService(NotificationManager::class.java)
         val filter = nm.currentInterruptionFilter
@@ -75,8 +75,8 @@ class TweaksDeviceTest {
     }
 
     @Test fun signedOutCannotApplyButCanRestore() {
-        val allowed = TweakEngine(ctx) { true }
-        val locked = TweakEngine(ctx) { false }
+        val allowed = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { true }
+        val locked = TweakEngine(ctx, planAllows = { PlanAccess.canUse("lifetime", it) }) { false }
         val tweak = Tweaks.byId("screen-awake")!!
         if (allowed.isApplied(tweak)) allowed.revert(tweak)
         val before = tweak.changes.map { read(it) }
@@ -85,6 +85,14 @@ class TweaksDeviceTest {
         assertEquals(before, tweak.changes.map { read(it) })
         assertNull(allowed.apply(tweak))
         assertNull(locked.revert(tweak))
+        assertEquals(before, tweak.changes.map { read(it) })
+    }
+
+    @Test fun signedInWithoutRequiredTierCannotChangeSettings() {
+        val restricted = TweakEngine(ctx, planAllows = { false }) { true }
+        val tweak = Tweaks.byId("screen-awake")!!
+        val before = tweak.changes.map { read(it) }
+        assertTrue(restricted.apply(tweak)!!.contains("higher lifetime plan"))
         assertEquals(before, tweak.changes.map { read(it) })
     }
 

@@ -126,7 +126,11 @@ object Tweaks {
     fun byId(id: String) = all.firstOrNull { it.id == id }
 }
 
-class TweakEngine(private val ctx: Context, private val authenticated: () -> Boolean = { Account.authenticated() }) {
+class TweakEngine(
+    private val ctx: Context,
+    private val planAllows: (String) -> Boolean = { Account.canUse(it) },
+    private val authenticated: () -> Boolean = { Account.authenticated() },
+) {
     private val prefs = ctx.getSharedPreferences("woof-tweaks", Context.MODE_PRIVATE)
     private val cr get() = ctx.contentResolver
     private val nm get() = ctx.getSystemService(NotificationManager::class.java)
@@ -168,7 +172,7 @@ class TweakEngine(private val ctx: Context, private val authenticated: () -> Boo
     /** Apply all-or-nothing. Returns null on success, or a message for the user. */
     fun apply(t: Tweak): String? {
         if (!authenticated()) return "Sign in to use Woof Tweaks."
-        if (!Account.canUse(t.id)) return "This tweak requires a higher lifetime plan. See plans on woof-services.stream/tweaks#plans."
+        if (!planAllows(t.id)) return "This tweak requires a higher lifetime plan. See plans on woof-services.stream/tweaks#plans."
         if (!allowed(t)) return "Allow access first."
         if (isApplied(t)) return null
         val originals = t.changes.map { read(it) }
