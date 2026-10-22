@@ -10,9 +10,9 @@
 const { app, shell, Notification, powerMonitor } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { spawn, execFile } = require('child_process');
 const { parseLatestYml, cmpVersion } = require('./update-feed');
+const { withUpdateResponse, saveVerifiedUpdate } = require('./update-transfer');
 
 const IS_MAC = process.platform === 'darwin';
 const REPO = 'https://github.com/oliveman-au/woof-tweaks/releases';
@@ -139,29 +139,21 @@ function macSupported() {
   try { fs.accessSync(path.dirname(b), fs.constants.W_OK); fs.accessSync(b, fs.constants.W_OK); return true; } catch { return false; }
 }
 
-async function fetchOk(url, timeoutMs) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const r = await fetch(url, { redirect: 'follow', signal: ctrl.signal, headers: { 'User-Agent': `WoofTweaks/${app.getVersion()}` } });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r;
-  } finally { clearTimeout(t); }
-}
+const fetchUpdate = (url, timeoutMs, consume) => withUpdateResponse(url, { timeoutMs, userAgent: `WoofTweaks/${app.getVersion()}` }, consume);
 
 const run = (cmd, args) => new Promise((resolve, reject) => execFile(cmd, args, { timeout: 300_000 }, (e, out) => (e ? reject(e) : resolve(String(out)))));
 
 async function macCheck(store) {
   if (state.status === 'ready' || state.status === 'downloading') return;
   setState({ status: 'checking', error: null, manual: !macSupported() });
-  const yml = await (await fetchOk(`${REPO}/latest/download/latest-mac.yml`, 20_000)).text();
+  const yml = await fetchUpdate(`${REPO}/latest/download/latest-mac.yml`, 20_000, r => r.text());
   const info = parseLatestYml(yml);
   if (!info) throw new Error('Update information unavailable');
   if (cmpVersion(info.version, app.getVersion()) <= 0) { setState({ status: 'latest' }); return; }
   let critical = /\[critical\]/i.test(info.notes);
   if (!macSupported()) {
     // Can't replace itself: tell the user (and insist when the release notes say [critical]).
-    try { critical = /\[critical\]/i.test((await (await fetchOk('https://api.github.com/repos/oliveman-au/woof-tweaks/releases/latest', 15_000)).json()).body || ''); } catch { /* keep */ }
+    try { critical = /\[critical\]/i.test((await fetchUpdate('https://api.github.com/repos/oliveman-au/woof-tweaks/releases/latest', 15_000, r => r.json())).body || ''); } catch { /* keep */ }
     setState({ status: 'available', version: info.version, critical, manual: true });
     return;
   }
@@ -173,19 +165,11 @@ async function macCheck(store) {
   fs.mkdirSync(work);
   try {
     const zip = path.join(work, 'update.zip');
-    const r = await fetchOk(`${REPO}/download/v${info.version}/${info.url}`, 30 * 60_000);
-    const hash = crypto.createHash('sha512');
-    const out = fs.createWriteStream(zip);
-    let got = 0;
-    for await (const chunk of r.body) {
-      got += chunk.length;
-      if (got > info.size) throw new Error('Download larger than expected');
-      hash.update(chunk);
-      if (!out.write(chunk)) await new Promise((res) => out.once('drain', res));
-      setState({ progress: Math.round((got / info.size) * 100) });
-    }
-    await new Promise((res, rej) => out.end((e) => (e ? rej(e) : res())));
-    if (got !== info.size || hash.digest('base64') !== info.sha512) throw new Error("The download didn't match its checksum");
+    await fetchUpdate(`${REPO}/download/v${info.version}/${info.url}`, 30 * 60_000,
+      (response, signal) => saveVerifiedUpdate(response, signal, {
+        destination: zip, size: info.size, sha512: info.sha512,
+        onProgress: progress => setState({ progress }),
+      }));
     const dest = path.join(work, 'new');
     await run('/usr/bin/ditto', ['-x', '-k', zip, dest]);
     fs.rmSync(zip, { force: true });
